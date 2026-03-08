@@ -229,7 +229,8 @@ export async function sendClientMessage(token: string, message: string) {
  */
 export async function sendPlannerMessage(eventId: string, message: string) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     const { error } = await supabase
@@ -258,7 +259,8 @@ export async function sendPlannerMessage(eventId: string, message: string) {
  */
 export async function getOrCreateClientToken(eventId: string) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     // First check if token already exists
@@ -300,7 +302,8 @@ export async function getOrCreateClientToken(eventId: string) {
  */
 export async function sendFinalProposal(eventId: string) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     const finalToken = crypto.randomUUID()
@@ -597,7 +600,8 @@ export async function updateFinalProposalStatus(token: string, status: string, f
  */
 export async function generateProposalToken(eventId: string) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     const token = crypto.randomUUID()

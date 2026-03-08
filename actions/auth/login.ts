@@ -165,7 +165,8 @@ export async function getSession() {
 export async function getCurrentUser() {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
 
     if (!user) return null
 
@@ -187,7 +188,8 @@ export async function getCurrentUser() {
 export async function getPlannerProfile() {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
 
     if (!user) return null
 
@@ -206,7 +208,8 @@ export async function getPlannerProfile() {
 export async function updateProfile(formData: FormData) {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
 
     if (!user) {
         return { error: 'Not authenticated' }
@@ -238,7 +241,8 @@ export async function updateProfile(formData: FormData) {
 export async function updatePlannerProfile(formData: FormData) {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
 
     if (!user) {
         return { error: 'Not authenticated' }

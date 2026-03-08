@@ -19,7 +19,8 @@ export async function createBookingRequest(data: {
     const supabase = await createClient()
 
     // Get current user (planner)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
     if (authError || !user) {
         return { error: 'Unauthorized' }
     }
@@ -175,7 +176,8 @@ export async function deleteBookingRequest(eventId: string, vendorId: string) {
     const supabase = await createClient()
 
     // Get current user (planner)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
     if (authError || !user) {
         return { error: 'Unauthorized' }
     }

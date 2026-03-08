@@ -56,7 +56,8 @@ export async function getGuests(eventId: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -99,7 +100,8 @@ export async function createGuest(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -173,7 +175,8 @@ export async function updateGuest(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -242,7 +245,8 @@ export async function deleteGuest(id: string, eventId: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -272,7 +276,8 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }

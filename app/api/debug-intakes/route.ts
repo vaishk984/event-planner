@@ -5,7 +5,8 @@ export async function GET() {
     const supabase = await createClient()
 
     // 1. Get current user
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
 
     // 2. Query recent intakes raw
     const { data: rawIntakes, error } = await supabase

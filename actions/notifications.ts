@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function getNotifications() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { notifications: [], unreadCount: 0 }
 
     const { data, error } = await supabase
@@ -39,7 +40,8 @@ export async function markNotificationRead(notificationId: string) {
 
 export async function markAllNotificationsRead() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Not authenticated' }
 
     const { error } = await supabase

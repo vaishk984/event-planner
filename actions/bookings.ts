@@ -14,7 +14,8 @@ import { bookingService } from '@/lib/services/booking-service'
 export async function getEventBookings(eventId: string) {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         return bookingService.getEventBookings(eventId, user.id)
@@ -30,7 +31,8 @@ export async function getEventBookings(eventId: string) {
 export async function createBookingRequest(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         const input = {
@@ -61,7 +63,8 @@ export async function createBookingRequest(formData: FormData) {
 export async function updateBookingStatus(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         const id = formData.get('id') as string

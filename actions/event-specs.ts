@@ -25,7 +25,8 @@ export interface CategorySpecData {
  */
 export async function getEventSpecs(eventId: string): Promise<{ data: CategorySpecData[] | null; error?: string }> {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { data: null, error: 'Unauthorized' }
 
     const { data, error } = await supabase
@@ -59,7 +60,8 @@ export async function getEventSpecs(eventId: string): Promise<{ data: CategorySp
  */
 export async function saveEventSpecs(eventId: string, categories: CategorySpecData[]) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     // Upsert each category

@@ -39,7 +39,8 @@ const updateVendorSchema = createVendorSchema.partial().extend({
 export async function getVendors() {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         // Fetch both:
@@ -73,7 +74,8 @@ export async function getVendors() {
 export async function createVendor(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         const rawData = {
@@ -134,7 +136,8 @@ export async function createVendor(formData: FormData) {
 export async function updateVendor(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         const rawData = {
@@ -207,7 +210,8 @@ export async function updateVendor(formData: FormData) {
 export async function deleteVendor(id: string) {
     try {
         const supabase = await createClient()
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
         const { error } = await supabase

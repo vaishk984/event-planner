@@ -60,7 +60,8 @@ export async function getTasks(filters?: {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -110,7 +111,8 @@ export async function getAtRiskTasks() {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -150,7 +152,8 @@ export async function createTask(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -223,7 +226,8 @@ export async function updateTask(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -294,7 +298,8 @@ export async function deleteTask(id: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }
@@ -339,7 +344,8 @@ export async function completeTask(id: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
         if (authError || !user) {
             return { error: 'Unauthorized' }
         }

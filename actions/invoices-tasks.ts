@@ -9,7 +9,8 @@ import { revalidatePath } from 'next/cache'
 
 export async function getInvoices() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized', data: [] }
 
     const { data, error } = await supabase
@@ -57,7 +58,8 @@ export async function createInvoice(formData: {
     notes?: string
 }) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     // Generate invoice number
@@ -144,7 +146,8 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
 
 export async function getTasks() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized', data: [] }
 
     const { data, error } = await supabase
@@ -191,7 +194,8 @@ export async function createTask(formData: {
     category?: string
 }) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     const { data, error } = await supabase

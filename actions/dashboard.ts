@@ -8,7 +8,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     const supabase = await createClient()
 
     // 1. Get User Info
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) throw new Error('Not authenticated')
 
     const { data: profile } = await supabase

@@ -21,7 +21,8 @@ export async function submitVendorUpdate(data: {
     const supabase = await createClient()
 
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const user = session?.user;
     if (authError || !user) {
         return { error: 'Unauthorized' }
     }
@@ -103,7 +104,8 @@ export async function markVendorArrival(eventId: string) {
 export async function uploadEventPhoto(formData: FormData) {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
     const file = formData.get('file') as File
@@ -274,7 +276,8 @@ export async function getEventDayVendors(eventId: string) {
 export async function getVendorEventDayData() {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return { events: [], updates: [] }
 
     // Get vendor profile
