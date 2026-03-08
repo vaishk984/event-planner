@@ -4,38 +4,34 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export default async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
-    let response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
+    let supabaseResponse = NextResponse.next({
+        request,
     })
 
-    // Create Supabase client for middleware
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value
+                getAll() {
+                    return request.cookies.getAll()
                 },
-                set(name: string, value: string, options: CookieOptions) {
-                    // Update the request cookies so subsequent Server Components can read the new value
-                    request.cookies.set({ name, value, ...options })
-                    // Add the cookie to the EXISTING response to persist it in the browser
-                    response.cookies.set({ name, value, ...options })
-                },
-                remove(name: string, options: CookieOptions) {
-                    // Update the request cookies
-                    request.cookies.set({ name, value: '', ...options })
-                    // Add the cookie removal to the EXISTING response
-                    response.cookies.set({ name, value: '', ...options })
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                    supabaseResponse = NextResponse.next({
+                        request,
+                    })
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        supabaseResponse.cookies.set(name, value, options)
+                    )
                 },
             },
         }
     )
 
-    // Refresh session if expired
+    // IMPORTANT: Avoid writing any logic between createServerClient and
+    // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+    // issues with users being randomly logged out.
     const { data: { user } } = await supabase.auth.getUser()
 
     // Public routes - allow access
@@ -54,7 +50,7 @@ export default async function proxy(request: NextRequest) {
         pathname.includes('.')
 
     if (isStaticRoute || isApiRoute) {
-        return response
+        return supabaseResponse
     }
 
     // If no user and trying to access protected route
@@ -64,14 +60,13 @@ export default async function proxy(request: NextRequest) {
 
     // If user exists and trying to access login/signup
     if (user && isPublicRoute) {
-        // Get user role and redirect to appropriate dashboard
+        // ... (profile and role fetching logic stays the same)
         const { data: profile } = await supabase
             .from('user_profiles')
             .select('role')
             .eq('id', user.id)
             .single()
 
-        // Check if user has a vendor record
         const { data: vendorRecord } = await supabase
             .from('vendors')
             .select('id')
@@ -90,7 +85,6 @@ export default async function proxy(request: NextRequest) {
             .eq('id', user.id)
             .single()
 
-        // Check if user has a vendor record
         const { data: vendorRecord } = await supabase
             .from('vendors')
             .select('id')
@@ -99,7 +93,6 @@ export default async function proxy(request: NextRequest) {
 
         const role = vendorRecord ? 'vendor' : (profile?.role || 'planner')
 
-        // Check role-based route access
         if (pathname.startsWith('/planner') && role !== 'planner' && role !== 'admin') {
             return NextResponse.redirect(new URL(`/${role}`, request.url))
         }
@@ -114,11 +107,11 @@ export default async function proxy(request: NextRequest) {
     }
 
     // Add security headers
-    response.headers.set('X-Frame-Options', 'DENY')
-    response.headers.set('X-Content-Type-Options', 'nosniff')
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    supabaseResponse.headers.set('X-Frame-Options', 'DENY')
+    supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
+    supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
-    return response
+    return supabaseResponse
 }
 
 export const config = {
