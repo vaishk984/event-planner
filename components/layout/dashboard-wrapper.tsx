@@ -97,6 +97,7 @@ export function DashboardWrapper({ children, userEmail = 'planner@example.com', 
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                prefetch={false}
                                 className={cn(
                                     "flex items-center px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden whitespace-nowrap",
                                     isActive
