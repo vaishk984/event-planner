@@ -35,77 +35,13 @@ export default async function proxy(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user
 
-    // Public routes - allow access
-    const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password']
-    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-
-    // Client proposal routes - public with token
-    const isClientRoute = pathname.startsWith('/client/proposal')
-
-    // API routes - handled separately
-    const isApiRoute = pathname.startsWith('/api')
-
-    // Static files
-    const isStaticRoute = pathname.startsWith('/_next') ||
-        pathname.startsWith('/favicon') ||
-        pathname.includes('.')
-
-    if (isStaticRoute || isApiRoute) {
-        return supabaseResponse
-    }
-
-    // If no user and trying to access protected route
-    if (!user && !isPublicRoute && !isClientRoute) {
-        return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // If user exists and trying to access login/signup
-    if (user && isPublicRoute) {
-        // ... (profile and role fetching logic stays the same)
-        const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-
-        const { data: vendorRecord } = await supabase
-            .from('vendors')
-            .select('id')
-            .eq('user_id', user.id)
-            .single()
-
-        const role = vendorRecord ? 'vendor' : (profile?.role || 'planner')
-        return NextResponse.redirect(new URL(`/${role}`, request.url))
-    }
-
-    // Role-based access control
-    if (user) {
-        const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-
-        const { data: vendorRecord } = await supabase
-            .from('vendors')
-            .select('id')
-            .eq('user_id', user.id)
-            .single()
-
-        const role = vendorRecord ? 'vendor' : (profile?.role || 'planner')
-
-        if (pathname.startsWith('/planner') && role !== 'planner' && role !== 'admin') {
-            return NextResponse.redirect(new URL(`/${role}`, request.url))
-        }
-
-        if (pathname.startsWith('/vendor') && role !== 'vendor' && role !== 'admin') {
-            return NextResponse.redirect(new URL(`/${role}`, request.url))
-        }
-
-        if (pathname.startsWith('/admin') && role !== 'admin') {
-            return NextResponse.redirect(new URL(`/${role}`, request.url))
-        }
-    }
+    // We only call getSession/getUser to ensure the Supabase SSR client
+    // has an opportunity to refresh the authentication tokens. 
+    // We explicitly DO NOT handle routing/redirects here because Next.js
+    // Server Actions (POST requests) frequently fail Edge cookie parsing,
+    // which would result in false-positive redirects to /login.
+    // All route protection is securely handled natively by layout.tsx on the server.
+    await supabase.auth.getUser()
 
     // Add security headers
     supabaseResponse.headers.set('X-Frame-Options', 'DENY')
