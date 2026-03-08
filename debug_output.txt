@@ -1,0 +1,8 @@
+🔍 Debugging User: rahul@elegantmoments.com
+✅ Auth User ID: 0f5702d6-018b-4743-a8b0-3e9e169bbbda
+   Metadata: {"company_name":"Elegant Moments Photography","email_verified":true,"full_name":"Elegant Moments Photography","role":"vendor"}
+✅ Vendor Link Found!
+   Vendor ID: 138accb7-0ea1-4e36-8fb3-1a0e7833dead
+   Company: Elegant Moments Photography
+   Calculated Role should be: vendor
+ℹ️ No User Profile record found.

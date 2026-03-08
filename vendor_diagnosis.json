@@ -1,0 +1,35 @@
+{
+  "vendor": {
+    "id": "ab6b6e93-1f3d-4585-9705-84439dad7edc",
+    "user_id": "8787d524-6f89-4a79-8c78-56c7728a58fe",
+    "company_name": "Vikram Singh",
+    "quality_score": 0,
+    "payout_details": null,
+    "created_at": "2026-02-05T22:25:44.837018+00:00",
+    "updated_at": "2026-02-05T22:25:44.837018+00:00",
+    "planner_id": null,
+    "email": null,
+    "phone": null,
+    "contact_name": null,
+    "website": null,
+    "category": null,
+    "description": null,
+    "location": null,
+    "start_price": null,
+    "end_price": null,
+    "is_verified": false,
+    "image_url": null,
+    "portfolio_urls": [],
+    "rating": 0,
+    "review_count": 0,
+    "status": "active"
+  },
+  "allBookings": [],
+  "vendorBookings": [],
+  "similarVendors": [
+    {
+      "id": "ab6b6e93-1f3d-4585-9705-84439dad7edc",
+      "company_name": "Vikram Singh"
+    }
+  ]
+}

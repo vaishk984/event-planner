@@ -1,0 +1,8 @@
+📊 Found 7 vendors in total.
+- Bloom & Petal Decorators: email=priya@bloompetal.com, user_id=18e971ce-e036-4fb0-976f-012596989ac7
+- Elegant Moments Photography: email=rahul@elegantmoments.com, user_id=0f5702d6-018b-4743-a8b0-3e9e169bbbda
+- Royal Feast Catering: email=info@royalfeast.com, user_id=ab83dbce-9869-4e97-a0c1-6257d4f2d568
+- Beachside Banquets Goa: email=events@beachsidebanquets.com, user_id=f817df35-905e-44df-8b07-9c043f2c859e
+- Lakeside Resort & Convention: email=contact@lakesideresort.com, user_id=78399ef6-8723-4f27-aefb-108479b8563a
+- Rhythm & Beats JS: email=amit@rhythmbeats.com, user_id=9ae3a287-91d2-420e-a117-3affdd6ba62e
+- Grand Palace Venue: email=grandpalacevenue@planneros.com, user_id=b796c02d-4a47-4838-915a-9858e6fc0319

@@ -1,0 +1,253 @@
+'use server'
+
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+
+// ============================================================================
+// INVOICE ACTIONS
+// ============================================================================
+
+export async function getInvoices() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized', data: [] }
+
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*, events(name)')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching invoices:', error)
+        // Fallback without join
+        const { data: fallback } = await supabase
+            .from('invoices')
+            .select('*')
+            .order('created_at', { ascending: false })
+        return { data: fallback || [] }
+    }
+
+    return { data: data || [] }
+}
+
+export async function getInvoicesByEvent(eventId: string) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*, invoice_items(*)')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching invoices:', error)
+        return { data: [] }
+    }
+
+    return { data: data || [] }
+}
+
+export async function createInvoice(formData: {
+    eventId: string
+    clientName: string
+    clientEmail?: string
+    clientPhone?: string
+    dueDate?: string
+    items: { description: string; quantity: number; rate: number }[]
+    notes?: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    // Generate invoice number
+    const { count } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+
+    const invoiceNumber = `INV-${String((count || 0) + 1).padStart(4, '0')}`
+
+    // Calculate totals
+    const subtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0)
+    const platformFee = Math.round(subtotal * 0.02)
+    const total = subtotal + platformFee
+
+    // Insert invoice
+    const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+            event_id: formData.eventId,
+            planner_id: user.id,
+            invoice_number: invoiceNumber,
+            client_name: formData.clientName,
+            client_email: formData.clientEmail || '',
+            client_phone: formData.clientPhone || '',
+            due_date: formData.dueDate || null,
+            subtotal,
+            platform_fee: platformFee,
+            total,
+            notes: formData.notes || '',
+        })
+        .select()
+        .single()
+
+    if (invoiceError || !invoice) {
+        console.error('Error creating invoice:', invoiceError)
+        return { error: 'Failed to create invoice' }
+    }
+
+    // Insert items
+    if (formData.items.length > 0) {
+        const itemRows = formData.items.map(item => ({
+            invoice_id: invoice.id,
+            description: item.description,
+            quantity: item.quantity,
+            rate: item.rate,
+            amount: item.quantity * item.rate,
+        }))
+
+        await supabase.from('invoice_items').insert(itemRows)
+    }
+
+    revalidatePath('/planner/invoices')
+    return { success: true, invoice }
+}
+
+export async function updateInvoiceStatus(invoiceId: string, status: string) {
+    const supabase = await createClient()
+
+    const updateData: any = { status, updated_at: new Date().toISOString() }
+    if (status === 'paid') {
+        updateData.paid_at = new Date().toISOString()
+        // Get invoice total to set paid_amount
+        const { data: inv } = await supabase.from('invoices').select('total').eq('id', invoiceId).single()
+        if (inv) updateData.paid_amount = inv.total
+    }
+
+    const { error } = await supabase
+        .from('invoices')
+        .update(updateData)
+        .eq('id', invoiceId)
+
+    if (error) {
+        console.error('Error updating invoice:', error)
+        return { error: 'Failed to update invoice' }
+    }
+
+    revalidatePath('/planner/invoices')
+    return { success: true }
+}
+
+// ============================================================================
+// TASK ACTIONS
+// ============================================================================
+
+export async function getTasks() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized', data: [] }
+
+    const { data, error } = await supabase
+        .from('tasks')
+        .select('*, events(name)')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching tasks:', error)
+        const { data: fallback } = await supabase
+            .from('tasks')
+            .select('*')
+            .order('created_at', { ascending: false })
+        return { data: fallback || [] }
+    }
+
+    return { data: data || [] }
+}
+
+export async function getTasksByEvent(eventId: string) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('due_date', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching tasks:', error)
+        return { data: [] }
+    }
+
+    return { data: data || [] }
+}
+
+export async function createTask(formData: {
+    eventId?: string
+    title: string
+    description?: string
+    priority?: string
+    dueDate?: string
+    assignedTo?: string
+    category?: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+            event_id: formData.eventId || null,
+            planner_id: user.id,
+            title: formData.title,
+            description: formData.description || '',
+            priority: formData.priority || 'medium',
+            due_date: formData.dueDate || null,
+            assigned_to: formData.assignedTo || '',
+            category: formData.category || 'general',
+        })
+        .select()
+        .single()
+
+    if (error) {
+        console.error('Error creating task:', error)
+        return { error: 'Failed to create task' }
+    }
+
+    revalidatePath('/planner/tasks')
+    return { success: true, task: data }
+}
+
+export async function updateTaskStatus(taskId: string, status: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('tasks')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', taskId)
+
+    if (error) {
+        console.error('Error updating task:', error)
+        return { error: 'Failed to update task' }
+    }
+
+    revalidatePath('/planner/tasks')
+    return { success: true }
+}
+
+export async function deleteTask(taskId: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId)
+
+    if (error) {
+        console.error('Error deleting task:', error)
+        return { error: 'Failed to delete task' }
+    }
+
+    revalidatePath('/planner/tasks')
+    return { success: true }
+}
