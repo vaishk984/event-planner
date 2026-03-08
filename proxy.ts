@@ -20,17 +20,15 @@ export default async function proxy(request: NextRequest) {
                     return request.cookies.get(name)?.value
                 },
                 set(name: string, value: string, options: CookieOptions) {
+                    // Update the request cookies so subsequent Server Components can read the new value
                     request.cookies.set({ name, value, ...options })
-                    response = NextResponse.next({
-                        request: { headers: request.headers },
-                    })
+                    // Add the cookie to the EXISTING response to persist it in the browser
                     response.cookies.set({ name, value, ...options })
                 },
                 remove(name: string, options: CookieOptions) {
+                    // Update the request cookies
                     request.cookies.set({ name, value: '', ...options })
-                    response = NextResponse.next({
-                        request: { headers: request.headers },
-                    })
+                    // Add the cookie removal to the EXISTING response
                     response.cookies.set({ name, value: '', ...options })
                 },
             },
