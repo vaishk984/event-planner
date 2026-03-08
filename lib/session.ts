@@ -3,11 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 export async function getSession() {
     const supabase = await createClient()
 
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const { data: { session }, error } = await supabase.auth.getSession()
 
-    if (error || !user) {
+    if (error || !session?.user) {
         return null
     }
+
+    const { user } = session
 
     // Check if user has a vendor record — use maybeSingle() so planners (no vendor row) return null cleanly
     const { data: vendorRecord } = await supabase
