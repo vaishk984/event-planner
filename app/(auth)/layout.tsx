@@ -20,17 +20,7 @@ export default function AuthLayout({
 
                 {children}
 
-                {/* Demo credentials */}
-                <div className="mt-8 pt-6 border-t border-slate-200">
-                    <p className="text-xs text-center text-slate-400 mb-3">Demo logins (pass: password123)</p>
-                    <div className="flex justify-center gap-4 text-xs text-slate-500">
-                        <span>planner@test.com</span>
-                        <span>·</span>
-                        <span>vendor@test.com</span>
-                        <span>·</span>
-                        <span>admin@test.com</span>
-                    </div>
-                </div>
+
             </div>
         </div>
     )

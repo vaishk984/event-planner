@@ -76,16 +76,7 @@ export function LoginForm() {
                 </Link>
             </div>
 
-            {/* Demo credentials hint */}
-            <div className="mt-4 p-3 bg-muted rounded-md text-sm">
-                <p className="font-medium mb-1">Demo Accounts:</p>
-                <p className="text-muted-foreground">
-                    Planner: demo@planner.com<br />
-                    Vendor: demo@vendor.com<br />
-                    Admin: demo@admin.com<br />
-                    <span className="text-xs">(Password: demo123)</span>
-                </p>
-            </div>
+
         </form>
     )
 }
