@@ -1,3 +1,4 @@
+'use server'
 import { getSession } from '@/lib/session';
 'use server'
 
