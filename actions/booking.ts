@@ -1,5 +1,6 @@
 'use server'
 
+import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -23,7 +24,7 @@ export async function createBookingRequest(data: {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
     // Ensure user profile exists
     const { data: profile } = await supabase
@@ -38,7 +39,7 @@ export async function createBookingRequest(data: {
             .from('user_profiles')
             .insert({
                 id: user.id,
-                company_name: user.user_metadata?.company_name || 'My Company'
+                company_name: (user as any).user_metadata?.company_name || 'My Company'
             })
 
         if (profileError) {
@@ -51,7 +52,7 @@ export async function createBookingRequest(data: {
             .from('planner_profiles')
             .upsert({
                 id: user.id,
-                company_name: user.user_metadata?.company_name || 'My Company'
+                company_name: (user as any).user_metadata?.company_name || 'My Company'
             })
 
         if (plannerError) {
@@ -180,7 +181,7 @@ export async function deleteBookingRequest(eventId: string, vendorId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
     const { error } = await supabase
         .from('booking_requests')

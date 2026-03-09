@@ -1,3 +1,4 @@
+import { getSession } from '@/lib/session';
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -25,7 +26,7 @@ export async function submitVendorUpdate(data: {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
     // Get vendor ID for this user
     const { data: vendor } = await supabase

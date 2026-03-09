@@ -1,3 +1,4 @@
+import { getSession } from '@/lib/session';
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -64,7 +65,7 @@ export async function getTasks(filters?: {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Build query
         let query = supabase
@@ -115,7 +116,7 @@ export async function getAtRiskTasks() {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -156,7 +157,7 @@ export async function createTask(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Parse and validate
         const rawData = {
@@ -230,7 +231,7 @@ export async function updateTask(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             id: formData.get('id') as string,
@@ -302,7 +303,7 @@ export async function deleteTask(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Verify ownership before delete
         const { data: task, error: fetchError } = await supabase
@@ -348,7 +349,7 @@ export async function completeTask(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const { data, error } = await supabase
             .from('tasks')

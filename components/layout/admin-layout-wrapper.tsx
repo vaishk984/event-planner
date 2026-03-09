@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard, Users, Building2, UserCog, Settings,
-    ChevronRight, LogOut, Shield, Bell, Search
+    ChevronRight, LogOut, Menu, X,
+    Shield, Bell, Search
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,11 +27,36 @@ export function AdminLayoutWrapper({
 }) {
     const pathname = usePathname()
     const [collapsed, setCollapsed] = useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     return (
-        <div className="min-h-screen bg-gray-100 flex">
+        <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
+
+            {/* Mobile Header overlay for hamburger */}
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b z-40 flex items-center justify-between px-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+                        <Shield className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-bold text-lg text-gray-800 tracking-tight">
+                        AdminOS
+                    </span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-gray-50 rounded-lg text-gray-600">
+                    {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+            </div>
+
+            {/* Mobile Sidebar backdrop */}
+            {isMobileMenuOpen && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black/50 z-50"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-slate-900 text-white transition-all duration-300 flex flex-col`}>
+            <aside className={`fixed md:relative left-0 top-0 h-screen z-[60] transform ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${collapsed ? "w-16" : "w-64"} bg-slate-900 text-white transition-all duration-300 flex flex-col`}>
                 {/* Logo */}
                 <div className="p-4 border-b border-slate-700">
                     <div className="flex items-center gap-2">
@@ -56,9 +82,10 @@ export function AdminLayoutWrapper({
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                onClick={() => setIsMobileMenuOpen(false)}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive
-                                        ? 'bg-red-500/20 text-red-400'
-                                        : 'text-slate-300 hover:bg-slate-800'
+                                    ? 'bg-red-500/20 text-red-400'
+                                    : 'text-slate-300 hover:bg-slate-800'
                                     }`}
                             >
                                 <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -72,6 +99,7 @@ export function AdminLayoutWrapper({
                 <div className="p-4 border-t border-slate-700">
                     <Link
                         href="/logout"
+                        onClick={() => setIsMobileMenuOpen(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
                     >
                         <LogOut className="w-5 h-5" />
@@ -81,7 +109,7 @@ export function AdminLayoutWrapper({
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col w-full mt-16 md:mt-0">
                 {/* Top Header */}
                 <header className="h-16 bg-white border-b flex items-center justify-between px-6">
                     <div className="flex items-center gap-4">

@@ -1,0 +1,49 @@
+actions/guests.ts(59,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/guests.ts(103,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/guests.ts(178,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/guests.ts(248,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/guests.ts(279,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/leads.ts(59,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/leads.ts(92,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/leads.ts(125,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/leads.ts(196,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/leads.ts(261,31): error TS2552: Cannot find name 'getSession'. Did you mean 'session'?
+actions/leads.ts(292,31): error TS2304: Cannot find name 'getSession'.
+actions/tasks.ts(63,31): error TS2304: Cannot find name 'getSession'.
+actions/tasks.ts(114,31): error TS2304: Cannot find name 'getSession'.
+actions/tasks.ts(155,31): error TS2304: Cannot find name 'getSession'.
+actions/tasks.ts(229,31): error TS2304: Cannot find name 'getSession'.
+actions/tasks.ts(301,31): error TS2304: Cannot find name 'getSession'.
+actions/tasks.ts(347,31): error TS2304: Cannot find name 'getSession'.
+actions/vendor-updates.ts(24,27): error TS2304: Cannot find name 'getSession'.
+app/(client)/proposal/[token]/page.tsx(67,44): error TS2339: Property 'proposal' does not exist on type 'never'.
+app/(client)/proposal/[token]/page.tsx(68,44): error TS2339: Property 'status' does not exist on type 'never'.
+app/(dashboard)/planner/events/[id]/builder/page.tsx(77,23): error TS2322: Type '{ id: any; name: any; category: any; basePrice: any; rating: any; reviewCount: number; city: any; isVerified: false; isActive: true; serviceAreas: never[]; priceRange: "mid"; currency: string; images: any[]; ... 4 more ...; email: string; }[]' is not assignable to type 'Vendor[]'.
+  Property 'portfolio' is missing in type '{ id: any; name: any; category: any; basePrice: any; rating: any; reviewCount: number; city: any; isVerified: false; isActive: true; serviceAreas: never[]; priceRange: "mid"; currency: string; images: any[]; ... 4 more ...; email: string; }' but required in type 'Vendor'.
+app/(dashboard)/planner/events/[id]/vendors/bookings-list.tsx(59,25): error TS2339: Property 'success' does not exist on type '{ success: boolean; error?: undefined; } | { error: string; }'.
+  Property 'success' does not exist on type '{ error: string; }'.
+app/(dashboard)/planner/events/[id]/vendors/page.tsx(19,37): error TS2339: Property 'data' does not exist on type '{ data: any[] | null; error: string | null; } | { error: string; }'.
+  Property 'data' does not exist on type '{ error: string; }'.
+lib/actions/payment-actions.ts(62,19): error TS2440: Import declaration conflicts with local declaration of 'ActionResult'.
+lib/repositories/vendor-repository.ts(13,12): error TS2352: Conversion of type '{ id: string; name: string; category: "venue" | "photography" | "catering"; description: string; phone: string; email: string; city: string; serviceAreas: string[]; basePrice: number; priceRange: "mid"; ... 7 more ...; updatedAt: string; }[]' to type 'Vendor[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'portfolio' is missing in type '{ id: string; name: string; category: "venue" | "photography" | "catering"; description: string; phone: string; email: string; city: string; serviceAreas: string[]; basePrice: number; priceRange: "mid"; ... 7 more ...; updatedAt: string; }' but required in type 'Vendor'.
+scripts/curl_restore.ts(40,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'Record<string, string>'.
+        Property ''apikey'' is incompatible with index signature.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'Record<string, string>'.
+        Property ''apikey'' is incompatible with index signature.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+scripts/trial_events.ts(30,45): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(31,57): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(46,45): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(47,57): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(70,45): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(71,57): error TS18047: 'data' is possibly 'null'.
+

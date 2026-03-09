@@ -56,7 +56,7 @@ export function BookingsList({ bookings, eventId }: BookingsListProps) {
 
         try {
             const result = await updateBookingStatus(formData)
-            if (!result.success) {
+            if (!(result as any).success) {
                 alert('Failed to update status')
             }
         } catch (error) {

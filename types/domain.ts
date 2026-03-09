@@ -496,7 +496,7 @@ export interface Vendor {
 
     // Media
     images: string[];
-    portfolio: string[]; // Mapped from portfolio_urls
+    portfolio?: string[]; // Mapped from portfolio_urls
     portfolioUrl?: string; // Legacy field?
 
 

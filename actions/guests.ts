@@ -1,3 +1,4 @@
+import { getSession } from '@/lib/session';
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -60,7 +61,7 @@ export async function getGuests(eventId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Verify event ownership
         const { data: event, error: eventError } = await supabase
@@ -104,7 +105,7 @@ export async function createGuest(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             eventId: formData.get('eventId')?.toString(),
@@ -179,7 +180,7 @@ export async function updateGuest(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             id: formData.get('id')?.toString(),
@@ -249,7 +250,7 @@ export async function deleteGuest(id: string, eventId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const { error } = await supabase
             .from('guests')
@@ -280,7 +281,7 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Verify event ownership ONCE
         const { data: event, error: eventError } = await supabase

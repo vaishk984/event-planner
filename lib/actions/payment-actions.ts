@@ -59,7 +59,7 @@ export interface ActionResult<T> {
 // HELPER
 // ============================================
 
-import { apiCall, ActionResult } from './shared-utils';
+import { apiCall } from './shared-utils';
 
 // ============================================
 // QUERY ACTIONS

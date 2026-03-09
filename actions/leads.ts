@@ -1,3 +1,4 @@
+import { getSession } from '@/lib/session';
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -60,7 +61,7 @@ export async function getLeads() {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Fetch leads (RLS automatically filters by planner_id)
         const { data, error } = await supabase
@@ -93,7 +94,7 @@ export async function getLead(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const { data, error } = await supabase
             .from('clients')
@@ -126,7 +127,7 @@ export async function createLead(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Parse and validate input
         const rawData = {
@@ -197,7 +198,7 @@ export async function updateLead(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             id: formData.get('id') as string,
@@ -262,7 +263,7 @@ export async function deleteLead(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         const { error } = await supabase
             .from('clients')
@@ -293,7 +294,7 @@ export async function convertLeadToEvent(leadId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email };
+        const user = { id: session.userId, email: session.email } as any;
 
         // Get lead details
         const { data: lead, error: leadError } = await supabase

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Calendar, Users, LayoutGrid, CheckSquare, LogOut, ChevronLeft, ChevronRight, FileText, IndianRupee, Home, ClipboardList, Building2, Package } from 'lucide-react'
+import { Calendar, Users, LayoutGrid, CheckSquare, LogOut, ChevronLeft, ChevronRight, FileText, IndianRupee, Home, ClipboardList, Building2, Package, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NotificationBell } from './notification-bell'
 
@@ -32,6 +32,7 @@ const VENDOR_NAV = [
 
 export function DashboardWrapper({ children, userEmail = 'planner@example.com', userRole = 'planner' }: DashboardWrapperProps) {
     const [isCollapsed, setIsCollapsed] = useState(false)
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const pathname = usePathname()
 
     const isVendor = userRole === 'vendor'
@@ -47,19 +48,46 @@ export function DashboardWrapper({ children, userEmail = 'planner@example.com', 
                 ? "bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30"
                 : "bg-gradient-to-br from-orange-50/50 via-white to-amber-50/30"
         )}>
+            {/* Mobile Header overlay for hamburger */}
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b z-40 flex items-center justify-between px-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                    <div className={cn(
+                        "w-8 h-8 bg-gradient-to-br rounded-lg flex items-center justify-center text-white font-bold shadow-md",
+                        accentFrom, accentTo
+                    )}>
+                        {isVendor ? 'V' : 'P'}
+                    </div>
+                    <span className="font-bold text-lg text-gray-800 tracking-tight">
+                        {isVendor ? 'VendorOS' : 'PlannerOS'}
+                    </span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-gray-50 rounded-lg text-gray-600">
+                    {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+            </div>
+
+            {/* Mobile Sidebar backdrop */}
+            {isMobileMenuOpen && (
+                <div
+                    className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed left-0 top-0 h-screen bg-white border-r z-50 flex flex-col transition-all duration-300 ease-in-out shadow-sm",
+                    "fixed left-0 top-0 h-screen bg-white border-r z-50 flex flex-col transition-all duration-300 ease-in-out shadow-sm transform",
+                    isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
                     isVendor ? "border-emerald-100" : "border-orange-100",
                     isCollapsed ? "w-20" : "w-64"
                 )}
             >
-                {/* Toggle Button */}
+                {/* Toggle Button (Desktop Only) */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     className={cn(
-                        "absolute -right-3 top-8 bg-white border rounded-full p-1 shadow-md z-50",
+                        "hidden md:flex absolute -right-3 top-8 bg-white border rounded-full p-1 shadow-md z-50",
                         isVendor ? "border-emerald-200 hover:bg-emerald-50" : "border-orange-200 hover:bg-orange-50"
                     )}
                 >
@@ -164,8 +192,8 @@ export function DashboardWrapper({ children, userEmail = 'planner@example.com', 
             {/* Main Content Area */}
             <div
                 className={cn(
-                    "flex-1 transition-all duration-300 ease-in-out p-8 w-full",
-                    isCollapsed ? "ml-20" : "ml-64"
+                    "flex-1 transition-all duration-300 ease-in-out p-4 md:p-8 w-full mt-16 md:mt-0",
+                    isCollapsed ? "md:ml-20" : "md:ml-64"
                 )}
             >
                 {children}
