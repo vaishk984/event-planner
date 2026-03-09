@@ -1,4 +1,5 @@
 'use server'
+import { getSession } from '@/lib/session'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardData, DashboardLead, DashboardTask, DashboardVendor, TodayEvent } from '@/types/dashboard'
 import { startOfDay, endOfDay, formatDistanceToNow } from 'date-fns'
@@ -7,8 +8,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     const supabase = await createClient()
 
     // 1. Get User Info
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const session = await getSession();
+    const user = session ? { id: session.userId } as any : null;
     if (!user) throw new Error('Not authenticated')
 
     const { data: profile } = await supabase
