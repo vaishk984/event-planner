@@ -56,11 +56,11 @@ export async function getGuests(eventId: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Verify event ownership
         const { data: event, error: eventError } = await supabase
@@ -100,11 +100,11 @@ export async function createGuest(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const rawData = {
             eventId: formData.get('eventId')?.toString(),
@@ -175,11 +175,11 @@ export async function updateGuest(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const rawData = {
             id: formData.get('id')?.toString(),
@@ -245,11 +245,11 @@ export async function deleteGuest(id: string, eventId: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const { error } = await supabase
             .from('guests')
@@ -276,11 +276,11 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Verify event ownership ONCE
         const { data: event, error: eventError } = await supabase

@@ -60,11 +60,11 @@ export async function getTasks(filters?: {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Build query
         let query = supabase
@@ -111,11 +111,11 @@ export async function getAtRiskTasks() {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -152,11 +152,11 @@ export async function createTask(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Parse and validate
         const rawData = {
@@ -226,11 +226,11 @@ export async function updateTask(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const rawData = {
             id: formData.get('id') as string,
@@ -298,11 +298,11 @@ export async function deleteTask(id: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Verify ownership before delete
         const { data: task, error: fetchError } = await supabase
@@ -344,11 +344,11 @@ export async function completeTask(id: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const { data, error } = await supabase
             .from('tasks')

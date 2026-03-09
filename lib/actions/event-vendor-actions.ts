@@ -53,7 +53,8 @@ export async function addVendorToEvent(
             const supabase = await createClient();
 
             // Get current user (planner)
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;;
 
             // Check if a booking_request already exists for this vendor+event
             const { count } = await supabase

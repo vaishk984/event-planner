@@ -1,5 +1,5 @@
 ﻿import '@/app/globals.css'
-
+import Link from 'next/link'
 export const metadata = {
     title: 'PlannerOS Showroom',
     description: 'Client Presentation Mode',
@@ -24,9 +24,9 @@ export default function ShowroomLayout({
                         </span>
                     </div>
                     <div>
-                        <a href="/planner" className="text-xs font-medium text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors">
+                        <Link href="/planner" className="text-xs font-medium text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors">
                             Exit Presentation
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </header>

@@ -56,11 +56,11 @@ export async function getLeads() {
         const supabase = await createClient()
 
         // Get current user
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Fetch leads (RLS automatically filters by planner_id)
         const { data, error } = await supabase
@@ -89,11 +89,11 @@ export async function getLead(id: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const { data, error } = await supabase
             .from('clients')
@@ -122,11 +122,11 @@ export async function createLead(formData: FormData) {
         const supabase = await createClient()
 
         // Auth check
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Parse and validate input
         const rawData = {
@@ -193,11 +193,11 @@ export async function updateLead(formData: FormData) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const rawData = {
             id: formData.get('id') as string,
@@ -258,11 +258,11 @@ export async function deleteLead(id: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         const { error } = await supabase
             .from('clients')
@@ -289,11 +289,11 @@ export async function convertLeadToEvent(leadId: string) {
     try {
         const supabase = await createClient()
 
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (authError || !user) {
+        const session = await getSession();
+        if (!session) {
             return { error: 'Unauthorized' }
         }
+        const user = { id: session.userId, email: session.email };
 
         // Get lead details
         const { data: lead, error: leadError } = await supabase

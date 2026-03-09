@@ -19,11 +19,11 @@ export async function createBookingRequest(data: {
     const supabase = await createClient()
 
     // Get current user (planner)
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-    if (authError || !user) {
-        return { error: 'Unauthorized' }
-    }
+    const session = await getSession();
+        if (!session) {
+            return { error: 'Unauthorized' }
+        }
+        const user = { id: session.userId, email: session.email };
 
     // Ensure user profile exists
     const { data: profile } = await supabase
@@ -176,11 +176,11 @@ export async function deleteBookingRequest(eventId: string, vendorId: string) {
     const supabase = await createClient()
 
     // Get current user (planner)
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-        const user = session?.user;
-    if (authError || !user) {
-        return { error: 'Unauthorized' }
-    }
+    const session = await getSession();
+        if (!session) {
+            return { error: 'Unauthorized' }
+        }
+        const user = { id: session.userId, email: session.email };
 
     const { error } = await supabase
         .from('booking_requests')
