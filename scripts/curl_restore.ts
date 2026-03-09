@@ -17,8 +17,8 @@ async function restoreViaFetch() {
 
     const url = `${supabaseUrl}/rest/v1/vendors`;
     const headers = {
-        'apikey': supabaseServiceKey,
-        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'apikey': supabaseServiceKey as string,
+        'Authorization': `Bearer ${supabaseServiceKey as string}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
     };

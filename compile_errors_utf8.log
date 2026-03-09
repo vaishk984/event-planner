@@ -1,0 +1,23 @@
+app/(client)/proposal/[token]/page.tsx(67,44): error TS2339: Property 'proposal' does not exist on type 'never'.
+app/(client)/proposal/[token]/page.tsx(68,44): error TS2339: Property 'status' does not exist on type 'never'.
+app/(dashboard)/planner/events/[id]/vendors/page.tsx(19,37): error TS2339: Property 'data' does not exist on type '{ data: any[] | null; error: string | null; } | { error: string; }'.
+  Property 'data' does not exist on type '{ error: string; }'.
+scripts/curl_restore.ts(40,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'Record<string, string>'.
+        Property ''apikey'' is incompatible with index signature.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'HeadersInit | undefined'.
+      Type '{ apikey: string | undefined; Authorization: string; 'Content-Type': string; Prefer: string; }' is not assignable to type 'Record<string, string>'.
+        Property ''apikey'' is incompatible with index signature.
+          Type 'string | undefined' is not assignable to type 'string'.
+            Type 'undefined' is not assignable to type 'string'.
+scripts/trial_events.ts(30,45): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(31,57): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(46,45): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(47,57): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(70,45): error TS18047: 'data' is possibly 'null'.
+scripts/trial_events.ts(71,57): error TS18047: 'data' is possibly 'null'.

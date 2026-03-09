@@ -27,8 +27,8 @@ async function trialAndError() {
         console.log('❌', error.message);
     } else {
         console.log('✅ SUCCESS!');
-        console.log('Columns:', Object.keys(data[0]).join(', '));
-        await supabase.from('events').delete().eq('id', data[0].id);
+        console.log('Columns:', Object.keys(data![0]).join(', '));
+        await supabase.from('events').delete().eq('id', data![0].id);
         return;
     }
 
@@ -43,8 +43,8 @@ async function trialAndError() {
         console.log('❌', error.message);
     } else {
         console.log('✅ SUCCESS!');
-        console.log('Columns:', Object.keys(data[0]).join(', '));
-        await supabase.from('events').delete().eq('id', data[0].id);
+        console.log('Columns:', Object.keys(data![0]).join(', '));
+        await supabase.from('events').delete().eq('id', data![0].id);
         return;
     }
 
@@ -67,8 +67,8 @@ async function trialAndError() {
         console.log('❌', error.message);
     } else {
         console.log('✅ SUCCESS!');
-        console.log('Columns:', Object.keys(data[0]).join(', '));
-        await supabase.from('events').delete().eq('id', data[0].id);
+        console.log('Columns:', Object.keys(data![0]).join(', '));
+        await supabase.from('events').delete().eq('id', data![0].id);
     }
 }
 

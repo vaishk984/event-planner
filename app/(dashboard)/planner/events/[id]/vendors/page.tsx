@@ -16,12 +16,12 @@ export default async function EventVendorsPage({ params }: { params: Promise<{ i
         getVendors()
     ])
 
-    const bookings = bookingsResult.data || []
+    const bookings = (bookingsResult as any).data || []
 
     // Filter available vendors: 
     // Ideally exclude those already booked? 
     // Or just pass all. Let's pass all for now, maybe mark them as assigned in dialog visually if needed.
-    const allVendors = vendorsResult.data || []
+    const allVendors = (vendorsResult as any).data || []
 
     return (
         <div className="space-y-6">

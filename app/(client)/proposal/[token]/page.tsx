@@ -64,16 +64,16 @@ export default function ClientProposalPage({ params }: { params: Promise<{ token
                     if ('error' in result) {
                         setError(result.error || 'Final proposal not found')
                     } else {
-                        setProposal(result.proposal)
-                        setApproved(result.status === 'approved')
+                        setProposal((result as any).proposal)
+                        setApproved((result as any).status === 'approved')
                     }
                 } else {
                     const result = await getPublicProposalDetails(token)
                     if (result.error || !result.proposal) {
                         setError(result.error || 'Failed to load proposal')
                     } else {
-                        setProposal(result.proposal)
-                        setApproved(result.proposal.status === 'approved')
+                        setProposal((result as any).proposal)
+                        setApproved((result as any).proposal.status === 'approved')
                     }
                 }
             } catch (err) {
