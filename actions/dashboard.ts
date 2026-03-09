@@ -1,5 +1,4 @@
 'use server'
-
 import { createClient } from '@/lib/supabase/server'
 import { DashboardData, DashboardLead, DashboardTask, DashboardVendor, TodayEvent } from '@/types/dashboard'
 import { startOfDay, endOfDay, formatDistanceToNow } from 'date-fns'

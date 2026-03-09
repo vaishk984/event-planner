@@ -1,5 +1,4 @@
 'use server'
-
 import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
