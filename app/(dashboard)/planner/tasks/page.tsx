@@ -1,4 +1,5 @@
 import { getTasks } from '@/actions/tasks'
+export const dynamic = 'force-dynamic'
 import { TasksClient } from './tasks-client'
 import { Card } from '@/components/ui/card'
 import { AlertTriangle } from 'lucide-react'

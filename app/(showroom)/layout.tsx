@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 ﻿import '@/app/globals.css'
 import Link from 'next/link'
 export const metadata = {
