@@ -1,11 +1,17 @@
-import { getTasks } from '@/actions/tasks'
+import { getTasksData } from '@/lib/data/queries'
 export const dynamic = 'force-dynamic'
 import { TasksClient } from './tasks-client'
 import { Card } from '@/components/ui/card'
 import { AlertTriangle } from 'lucide-react'
 
-export default async function TasksPage() {
-    const result = await getTasks()
+export default async function TasksPage({
+    searchParams
+}: {
+    searchParams: { event?: string; status?: string; priority?: string }
+}) {
+    // Await searchParams before using them
+    const params = await searchParams
+    const result = await getTasksData({ eventId: params.event, status: params.status, priority: params.priority })
 
     if (result.error) {
         return (

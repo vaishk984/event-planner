@@ -8,11 +8,11 @@ import {
     Search, Plus, AlertTriangle, Star,
     TrendingUp, PhoneCall, MessageSquare
 } from 'lucide-react'
-import { getLeads } from '@/actions/leads'
+import { getLeadsData } from '@/lib/data/queries'
 import { LeadsClient } from './leads-client'
 
 export default async function LeadsPage() {
-    const result = await getLeads()
+    const result = await getLeadsData()
 
     if (result.error) {
         return (
