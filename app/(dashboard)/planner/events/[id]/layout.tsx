@@ -1,12 +1,14 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { EventWorkspaceLayout } from '@/components/events/event-workspace-layout'
 import { formatDate } from '@/lib/utils/format'
-import { createClient } from '@/lib/supabase/client'
 import type { Event } from '@/types/domain'
 import { Loader2 } from 'lucide-react'
+import { getEvent } from '@/lib/actions/event-actions'
+import { getEventVendors } from '@/lib/actions/event-vendor-actions'
+import { EventHydrator } from '@/components/events/event-hydrator'
 
 export default function EventLayout({
     children,
@@ -14,7 +16,6 @@ export default function EventLayout({
     children: React.ReactNode
 }) {
     const params = useParams()
-    const router = useRouter()
     const id = params.id as string
 
     const [event, setEvent] = useState<Event | null>(null)
@@ -23,79 +24,31 @@ export default function EventLayout({
 
     useEffect(() => {
         const loadEvent = async () => {
-            const supabase = createClient()
+            const [eventData, eventVendors] = await Promise.all([
+                getEvent(id),
+                getEventVendors(id),
+            ])
 
-            const { data, error } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', id)
-                .single()
-
-            if (error || !data) {
-                console.error('[Event Layout] Error loading event:', error?.message)
+            if (!eventData) {
                 setLoading(false)
                 return
             }
 
-            // Fetch Vendors
-            const { data: vendorData, error: vendorError } = await supabase
-                .from('vendor_assignments')
-                .select(`
-                    *,
-                    vendor:vendor_id (
-                        id,
-                        name:company_name,
-                        category,
-                        price_range
-                    )
-                `)
-                .eq('event_id', id)
-
-            const vendors = vendorData ? vendorData.map((v: any) => ({
-                id: v.vendor?.id,
-                name: v.vendor?.name || 'Unknown Vendor',
-                category: v.vendor?.category || v.category,
-                service: v.vendor?.category || 'Service',
-                cost: v.price || 0,
+            const vendors = eventVendors.map((vendor) => ({
+                id: vendor.vendorId,
+                name: vendor.vendorName || 'Unknown Vendor',
+                category: vendor.vendorCategory || vendor.category || 'other',
+                service: vendor.vendorCategory || 'Service',
+                cost: vendor.agreedAmount || vendor.price || 0,
                 imageUrl: ''
-            })) : []
-
-            // Convert snake_case to camelCase manually
-            const eventData: Event = {
-                id: data.id,
-                plannerId: data.planner_id,
-                clientId: data.client_id,
-                submissionId: data.submission_id,
-                status: data.status,
-                type: data.type,
-                name: data.name,
-                publicToken: data.public_token,
-                proposalStatus: data.proposal_status,
-                date: data.date,
-                endDate: data.end_date,
-                isDateFlexible: data.is_date_flexible || false,
-                city: data.city || '',
-                venueType: data.venue_type || 'showroom',
-                venueName: data.venue_name,
-                venueAddress: data.venue_address,
-                guestCount: data.guest_count || 0,
-                budgetMin: data.budget_min || 0,
-                budgetMax: data.budget_max || 0,
-                clientName: data.client_name || '',
-                clientPhone: data.client_phone || '',
-                clientEmail: data.client_email,
-                source: data.source,
-                notes: data.notes,
-                createdAt: data.created_at,
-                updatedAt: data.updated_at,
-            }
+            }))
 
             setEvent(eventData)
-            setVendors(vendors) // New state
+            setVendors(vendors)
             setLoading(false)
         }
         loadEvent()
-    }, [id, router])
+    }, [id])
 
     if (loading) {
         return (
@@ -129,6 +82,3 @@ export default function EventLayout({
         </EventWorkspaceLayout>
     )
 }
-
-import { EventHydrator } from '@/components/events/event-hydrator'
-

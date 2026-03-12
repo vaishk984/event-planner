@@ -13,8 +13,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { getEventVendors, removeVendorFromEvent } from '@/lib/actions/event-vendor-actions'
-import { createClient } from '@/lib/supabase/client'
-import type { Event, EventVendor } from '@/types/domain'
+import type { Event } from '@/types/domain'
+import { getEvent } from '@/lib/actions/event-actions'
 
 interface SelectedVendor {
     id: string
@@ -40,49 +40,10 @@ export default function EventDesignPage() {
         const loadEventData = async () => {
             setLoading(true)
             try {
-                const supabase = createClient()
-
-                // Fetch event details
-                const { data: eventData, error: eventError } = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('id', eventId)
-                    .single()
-
-                if (eventError || !eventData) {
-                    console.error('Failed to load event:', eventError)
+                const loadedEvent = await getEvent(eventId)
+                if (!loadedEvent) {
                     setLoading(false)
                     return
-                }
-
-                // Convert to Event type
-                const loadedEvent: Event = {
-                    id: eventData.id,
-                    plannerId: eventData.planner_id,
-                    clientId: eventData.client_id,
-                    submissionId: eventData.submission_id,
-                    status: eventData.status,
-                    type: eventData.type,
-                    name: eventData.name,
-                    publicToken: eventData.public_token,
-                    proposalStatus: eventData.proposal_status,
-                    date: eventData.date,
-                    endDate: eventData.end_date,
-                    isDateFlexible: eventData.is_date_flexible || false,
-                    city: eventData.city || '',
-                    venueType: eventData.venue_type || 'showroom',
-                    venueName: eventData.venue_name,
-                    venueAddress: eventData.venue_address,
-                    guestCount: eventData.guest_count || 0,
-                    budgetMin: eventData.budget_min || 0,
-                    budgetMax: eventData.budget_max || 0,
-                    clientName: eventData.client_name || '',
-                    clientPhone: eventData.client_phone || '',
-                    clientEmail: eventData.client_email,
-                    source: eventData.source,
-                    notes: eventData.notes,
-                    createdAt: eventData.created_at,
-                    updatedAt: eventData.updated_at,
                 }
 
                 setEvent(loadedEvent)

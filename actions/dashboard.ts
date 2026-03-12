@@ -23,45 +23,56 @@ export async function getDashboardData(): Promise<DashboardData> {
         eventsResult,
         leadsResult,
         paymentsResult,
-        tasksResult,
+        pendingPaymentsResult,
         todayEventsResult,
         recentLeadsResult,
         urgentTasksResult
     ] = await Promise.all([
         // Active Events Count
-        supabase.from('events').select('id', { count: 'exact' }).neq('status', 'completed'),
+        supabase.from('events')
+            .select('id', { count: 'exact' })
+            .eq('planner_id', user.id)
+            .neq('status', 'completed'),
 
         // Open Leads Count
-        supabase.from('clients').select('id', { count: 'exact' }).eq('status', 'prospect'),
+        supabase.from('clients')
+            .select('id', { count: 'exact' })
+            .eq('planner_id', user.id)
+            .eq('status', 'prospect'),
 
         // Revenue (Confirmed payments this month)
         supabase.from('financial_payments')
-            .select('amount')
+            .select('amount, events!inner(planner_id)')
+            .eq('events.planner_id', user.id)
             .eq('status', 'completed')
             .eq('type', 'client_payment'),
 
         // Pending Payments (Invoices sent but not paid)
         supabase.from('financial_payments')
-            .select('amount')
+            .select('amount, events!inner(planner_id)')
+            .eq('events.planner_id', user.id)
             .eq('status', 'pending')
             .eq('type', 'client_payment'),
 
         // Today's Events
         supabase.from('event_functions')
-            .select('id, name, start_time, type')
+            .select('id, name, start_time, type, events!inner(planner_id)')
+            .eq('events.planner_id', user.id)
             .gte('date', startOfDay(new Date()).toISOString())
             .lte('date', endOfDay(new Date()).toISOString()),
 
         // Recent Leads
         supabase.from('clients')
             .select('*')
+            .eq('planner_id', user.id)
             .eq('status', 'prospect')
             .order('created_at', { ascending: false })
             .limit(5),
 
         // Tasks at Risk (Overdue or due soon)
         supabase.from('tasks')
-            .select('id, title, due_date, events(name)')
+            .select('id, title, due_date, events!inner(name, planner_id)')
+            .eq('events.planner_id', user.id)
             .neq('status', 'completed')
             .lt('due_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()) // Due within 24h or overdue
             .limit(5)
@@ -69,7 +80,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
     // Calculate Totals
     const revenue = paymentsResult.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
-    const pendingRevenue = tasksResult.data?.reduce((sum, p) => sum + 0, 0) || 0 // Fix logic if using correct table
+    const pendingRevenue = pendingPaymentsResult.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
 
     // Transform Events
     const todayEvents: TodayEvent[] = (todayEventsResult.data || []).map(e => ({
@@ -109,7 +120,7 @@ export async function getDashboardData(): Promise<DashboardData> {
             openLeadsChange: 5,
             revenue: revenue,
             revenueChange: 12,
-            pendingPayments: 0, // Need to fix Pending query above
+            pendingPayments: pendingRevenue,
             overduePayments: 0
         },
         todayEvents,

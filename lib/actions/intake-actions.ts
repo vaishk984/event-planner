@@ -14,14 +14,24 @@ import type { Intake, Event, ActionResult } from '@/types/domain'
  * Get all intakes
  */
 export async function getIntakes(): Promise<Intake[]> {
-    return supabaseIntakeRepository.findMany()
+    const user = await getCurrentUser()
+    if (!user) {
+        return []
+    }
+
+    return supabaseIntakeRepository.findByPlannerId(user.id)
 }
 
 /**
  * Get pending intakes (not yet converted)
  */
 export async function getPendingIntakes(): Promise<Intake[]> {
-    return supabaseIntakeRepository.findPending()
+    const user = await getCurrentUser()
+    if (!user) {
+        return []
+    }
+
+    return supabaseIntakeRepository.findPending(user.id)
 }
 
 /**
@@ -106,6 +116,9 @@ export async function convertIntakeToEvent(intakeId: string): Promise<ActionResu
     const intake = await supabaseIntakeRepository.findById(intakeId)
     if (!intake) {
         return { success: false, error: 'Intake not found', code: 'NOT_FOUND' }
+    }
+    if (intake.plannerId !== user.id) {
+        return { success: false, error: 'Forbidden', code: 'FORBIDDEN' }
     }
 
     // Map intake data to Event fields (match Event interface in types/domain.ts)

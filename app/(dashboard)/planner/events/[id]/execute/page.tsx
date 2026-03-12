@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { EventDayDashboard } from '@/components/events/event-day-dashboard'
 import { Loader2, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Event } from '@/types/domain'
+import { getEvent } from '@/lib/actions/event-actions'
 
 export default function ExecutePage() {
     const params = useParams()
@@ -19,17 +19,12 @@ export default function ExecutePage() {
     useEffect(() => {
         const loadEvent = async () => {
             try {
-                const supabase = createClient()
-                const { data, error: fetchError } = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('id', id)
-                    .single()
+                const eventData = await getEvent(id)
 
-                if (fetchError || !data) {
+                if (!eventData) {
                     setError(true)
                 } else {
-                    setEvent(data as Event)
+                    setEvent(eventData)
                 }
             } catch {
                 setError(true)

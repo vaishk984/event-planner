@@ -11,8 +11,7 @@ import {
     Flower2, Lightbulb, HeartHandshake
 } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { getEventVendors, addVendorToEvent, removeVendorFromEvent } from '@/lib/actions/event-vendor-actions'
+import { getEventVendors, removeVendorFromEvent } from '@/lib/actions/event-vendor-actions'
 
 // All vendor service categories — planner picks what they need
 const VENDOR_CATEGORIES = [

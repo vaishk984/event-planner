@@ -120,14 +120,20 @@ class SupabaseIntakeRepositoryClass extends SupabaseBaseRepository<Intake> {
     /**
      * Find pending intakes (not yet converted to events)
      */
-    async findPending(): Promise<Intake[]> {
+    async findPending(plannerId?: string): Promise<Intake[]> {
         const supabase = await this.getClient()
 
-        const { data, error } = await supabase
+        let query = supabase
             .from(this.tableName)
             .select('*')
             .in('status', ['submitted', 'in_progress'])
             .order('id', { ascending: false })
+
+        if (plannerId) {
+            query = query.eq('planner_id', plannerId)
+        }
+
+        const { data, error } = await query
 
         if (error) {
             console.error('Error fetching pending intakes:', error)

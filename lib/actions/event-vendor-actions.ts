@@ -13,6 +13,21 @@ import { supabaseEventVendorRepository as eventVendorRepository } from '@/lib/re
 import { supabaseEventRepository as eventRepository } from '@/lib/repositories/supabase-event-repository';
 import type { EventVendor, VendorCategory, ActionResult } from '@/types/domain';
 import { revalidatePath } from 'next/cache';
+import { getUserId } from '@/lib/session';
+
+async function getOwnedEvent(eventId: string) {
+    const plannerId = await getUserId();
+    if (!plannerId) {
+        return null;
+    }
+
+    const event = await eventRepository.findById(eventId);
+    if (!event || event.plannerId !== plannerId) {
+        return null;
+    }
+
+    return event;
+}
 
 /**
  * Add vendor to event plan from showroom
@@ -27,8 +42,7 @@ export async function addVendorToEvent(
         imageUrl?: string;
     }
 ): Promise<ActionResult<EventVendor>> {
-    // Verify event exists
-    const event = await eventRepository.findById(eventId);
+    const event = await getOwnedEvent(eventId);
     if (!event) {
         return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
     }
@@ -100,8 +114,7 @@ export async function removeVendorFromEvent(
     eventId: string,
     vendorId: string
 ): Promise<ActionResult<void>> {
-    // Verify event exists and not locked
-    const event = await eventRepository.findById(eventId);
+    const event = await getOwnedEvent(eventId);
     if (!event) {
         return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
     }
@@ -123,6 +136,11 @@ export async function removeVendorFromEvent(
  * Get all vendors for an event
  */
 export async function getEventVendors(eventId: string): Promise<EventVendor[]> {
+    const event = await getOwnedEvent(eventId);
+    if (!event) {
+        return [];
+    }
+
     return eventVendorRepository.findByEventId(eventId);
 }
 

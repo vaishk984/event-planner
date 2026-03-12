@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { FunctionsPanel } from '@/components/events/functions-panel'
-import { eventRepository } from '@/lib/repositories/event-repository'
 import { Loader2 } from 'lucide-react'
 import type { Event } from '@/types/domain'
+import { getEvent } from '@/lib/actions/event-actions'
 
 export default function FunctionsPage() {
     const params = useParams()
@@ -17,7 +17,7 @@ export default function FunctionsPage() {
 
     useEffect(() => {
         const loadEvent = async () => {
-            const eventData = await eventRepository.findById(id)
+            const eventData = await getEvent(id)
             if (!eventData) {
                 router.push('/planner/events')
                 return

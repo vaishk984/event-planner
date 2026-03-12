@@ -2,6 +2,7 @@ import "./globals.css"
 import { QuoteProvider } from "@/components/providers/quote-provider"
 import { EventProvider } from "@/components/providers/event-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { getSession } from "@/lib/session"
 
 
 
@@ -16,16 +17,19 @@ export const metadata = {
   description: 'The Operating System for Event Planners',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getSession()
+  const userId = session?.userId ?? null
+
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <EventProvider>
-          <QuoteProvider>
+        <EventProvider userId={userId}>
+          <QuoteProvider userId={userId}>
             {children}
             <Toaster />
           </QuoteProvider>
@@ -35,4 +39,3 @@ export default function RootLayout({
     </html>
   )
 }
-

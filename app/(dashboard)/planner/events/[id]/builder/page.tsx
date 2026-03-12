@@ -22,7 +22,8 @@ import { SendPanel } from '@/components/builder/send-panel'
 // Types
 import type { Event, Intake, Vendor, EventVendor } from '@/types/domain'
 import { getRequestsForEvent } from '@/actions/booking'
-import { createClient } from '@/lib/supabase/client'
+import { getEvent } from '@/lib/actions/event-actions'
+import { getIntake } from '@/lib/actions/intake-actions'
 
 interface BuilderState {
     shortlist: {
@@ -106,92 +107,17 @@ export default function ProposalBuilderPage() {
                     }
                 }))
 
-                // Fetch real event details
-                const supabase = createClient()
-                const { data: eventData, error: eventError } = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('id', eventId)
-                    .single()
-
-                if (eventError) throw eventError
-
-                // Map snake_case DB fields to camelCase Event object
-                const mappedEvent: Event = {
-                    id: eventData.id,
-                    plannerId: eventData.planner_id,
-                    clientId: eventData.client_id,
-                    submissionId: eventData.submission_id,
-                    status: eventData.status,
-                    type: eventData.type,
-                    name: eventData.name,
-                    publicToken: eventData.public_token,
-                    proposalStatus: eventData.proposal_status,
-                    date: eventData.date,
-                    endDate: eventData.end_date,
-                    isDateFlexible: eventData.is_date_flexible,
-                    city: eventData.city,
-                    venueType: eventData.venue_type,
-                    venueName: eventData.venue_name,
-                    venueAddress: eventData.venue_address,
-                    guestCount: eventData.guest_count,
-                    budgetMin: eventData.budget_min,
-                    budgetMax: eventData.budget_max,
-                    clientName: eventData.client_name,
-                    clientPhone: eventData.client_phone,
-                    clientEmail: eventData.client_email,
-                    source: eventData.source,
-                    notes: eventData.notes,
-                    createdAt: eventData.created_at,
-                    updatedAt: eventData.updated_at
+                const mappedEvent = await getEvent(eventId)
+                if (!mappedEvent) {
+                    setEvent(null)
+                    setIntake(null)
+                    return
                 }
 
                 // Fetch intake if available
                 let intakeData: Intake | null = null
-                if (eventData.submission_id) {
-                    const { data: intakeRes, error: intakeError } = await supabase
-                        .from('event_intakes')
-                        .select('*')
-                        .eq('id', eventData.submission_id)
-                        .single()
-
-                    if (!intakeError && intakeRes) {
-                        // Map snake_case Intake fields if necessary (usually JSONB columns like 'requirements' store camelCase or snake_case inside?)
-                        // 'event_intakes' table schema: usually has 'requirements' JSONB. 
-                        // The 'Intake' type seems flat? 
-                        // Let's assume for now Intake might need mapping too, but let's look at the type definition for Intake.
-                        // Intake has 'stylePreferences', 'food', etc. 
-                        // In the DB, 'event_intakes' usually has: id, event_id, status, requirements (jsonb), created_at...
-                        // If the Intake type mirrors the DB structure, we might be okay, but types/domain.ts shows a flattened structure.
-                        // Wait, looking at types/domain.ts, Intake has 'stylePreferences' etc.
-                        // If 'event_intakes' has a JSONB column 'requirements' housing these, we need to extract them.
-                        // But if 'data' return is flat, then fine.
-                        // I'll assume for now Intake needs strict mapping too if fields are top level.
-                        // Actually, I should map the basic intake fields too just in case.
-                        // I'll cast intakeRes for now but rename fields if I see them in the DB schema later.
-                        // Actually, I should map the basic intake fields too just in case.
-                        intakeData = {
-                            ...intakeRes,
-                            // If fields are snake_case in intakeRes (which comes from DB), we map them.
-                            // But usually, Intake might be hydrated from a JSON column?
-                            // Let's assume basic fields for now.
-                            // types/domain.ts says: clientName, phone, email.
-                            // event_intakes likely has: client_name, client_phone, client_email.
-                            clientName: intakeRes.client_name || intakeRes.name, // fallback
-                            phone: intakeRes.client_phone || intakeRes.phone,
-                            email: intakeRes.client_email || intakeRes.email,
-                            currentTab: intakeRes.current_tab || 5, // default
-                            status: intakeRes.status,
-                            // If stylePreferences etc are stored in 'requirements' column, we need to extract.
-                            // Checking past context: 'requirements' is a JSONB column in 'event_intakes'.
-                            // So we should spread requirements if it exists.
-                            ...(intakeRes.requirements || {}),
-                            id: intakeRes.id,
-                            token: intakeRes.token,
-                            createdAt: intakeRes.created_at,
-                            updatedAt: intakeRes.updated_at
-                        } as unknown as Intake
-                    }
+                if (mappedEvent.submissionId) {
+                    intakeData = await getIntake(mappedEvent.submissionId)
                 }
 
                 setEvent(mappedEvent)

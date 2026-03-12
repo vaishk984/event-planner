@@ -18,6 +18,7 @@ import { getSpecsForEventType, type CategorySpec, type SpecItem } from '@/lib/te
 import { getEventSpecs, saveEventSpecs, type CategorySpecData } from '@/actions/event-specs'
 import type { Event } from '@/types/domain'
 import { toast } from 'sonner'
+import { getEvent } from '@/lib/actions/event-actions'
 
 const getColorClasses = (color: string) => {
     const colors: Record<string, { bg: string; text: string; light: string; border: string }> = {
@@ -62,15 +63,16 @@ export default function SpecificationsPage() {
 
     useEffect(() => {
         const loadEvent = async () => {
-            // Fetch event data
             const supabase = createClient()
-            const { data: eventData } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', eventId)
-                .single()
+            const eventData = await getEvent(eventId)
 
             setEvent(eventData)
+
+            if (!eventData) {
+                setSpecs([])
+                setLoading(false)
+                return
+            }
 
             // Try loading saved specs from DB
             const savedResult = await getEventSpecs(eventId)
@@ -90,7 +92,7 @@ export default function SpecificationsPage() {
             } else {
                 // Fall back to template
                 let template: CategorySpec[]
-                if (eventData?.type) {
+                if (eventData.type) {
                     template = getSpecsForEventType(eventData.type)
                 } else {
                     template = getSpecsForEventType('wedding')

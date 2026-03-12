@@ -13,6 +13,8 @@ import {
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import type { Event } from '@/types/domain'
+import { getEvent } from '@/lib/actions/event-actions'
 
 const getStatusBadge = (status: string) => {
     switch (status) {
@@ -46,7 +48,7 @@ export default function ProposalPage() {
     const id = params.id as string
 
     const [loading, setLoading] = useState(true)
-    const [event, setEvent] = useState<any>(null)
+    const [event, setEvent] = useState<Event | null>(null)
     const [snapshots, setSnapshots] = useState<ProposalSnapshot[]>([])
 
     useEffect(() => {
@@ -55,13 +57,14 @@ export default function ProposalPage() {
 
     const fetchData = async () => {
         const supabase = createClient()
+        const eventData = await getEvent(id)
 
-        // Fetch event
-        const { data: eventData } = await supabase
-            .from('events')
-            .select('id, name, public_token, final_proposal_token, proposal_status')
-            .eq('id', id)
-            .single()
+        if (!eventData) {
+            setEvent(null)
+            setSnapshots([])
+            setLoading(false)
+            return
+        }
 
         setEvent(eventData)
 
@@ -92,7 +95,7 @@ export default function ProposalPage() {
 
     const sentCount = snapshots.filter(s => s.status !== 'draft').length
     const approvedCount = snapshots.filter(s => s.status === 'approved').length
-    const hasPreliminaryLink = !!event?.public_token
+    const hasPreliminaryLink = !!event?.publicToken
 
     return (
         <div className="space-y-6">
@@ -149,10 +152,10 @@ export default function ProposalPage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => copyLink(event.public_token)}>
+                            <Button variant="outline" size="sm" onClick={() => copyLink(event.publicToken!)}>
                                 <Copy className="w-4 h-4 mr-1" /> Copy Link
                             </Button>
-                            <Link href={`/proposal/${event.public_token}`} target="_blank">
+                            <Link href={`/proposal/${event.publicToken}`} target="_blank">
                                 <Button variant="outline" size="sm">
                                     <ExternalLink className="w-4 h-4 mr-1" /> Open
                                 </Button>

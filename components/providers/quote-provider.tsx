@@ -14,12 +14,24 @@ interface QuoteContextType {
 
 const QuoteContext = createContext<QuoteContextType | undefined>(undefined)
 
-export function QuoteProvider({ children }: { children: React.ReactNode }) {
-    const [items, setItems] = useState<QuoteItem[]>([])
+function getQuoteStorageKey(userId?: string | null) {
+    return `planner_quote_cart:${userId || 'guest'}`
+}
 
-    // Load from local storage on mount (Simulation)
+export function QuoteProvider({
+    children,
+    userId,
+}: {
+    children: React.ReactNode
+    userId?: string | null
+}) {
+    const [items, setItems] = useState<QuoteItem[]>([])
+    const storageKey = getQuoteStorageKey(userId)
+
+    // Load quote state for the active account
     useEffect(() => {
-        const saved = localStorage.getItem('planner_quote_cart')
+        setItems([])
+        const saved = localStorage.getItem(storageKey)
         if (saved) {
             try {
                 setItems(JSON.parse(saved))
@@ -27,12 +39,12 @@ export function QuoteProvider({ children }: { children: React.ReactNode }) {
                 console.error('Failed to parse quote cart', e)
             }
         }
-    }, [])
+    }, [storageKey])
 
-    // Save to local storage on change
+    // Persist quote state per account
     useEffect(() => {
-        localStorage.setItem('planner_quote_cart', JSON.stringify(items))
-    }, [items])
+        localStorage.setItem(storageKey, JSON.stringify(items))
+    }, [items, storageKey])
 
     const addToQuote = (vendor: Vendor, serviceName: string = 'Standard Package', price: number = 0) => {
         setItems(prev => {

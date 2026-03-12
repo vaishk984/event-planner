@@ -15,7 +15,7 @@ import {
     canTransitionTo,
     getEventStatusInfo
 } from '@/lib/domain/event';
-import type { Event, EventStatus, ClientSubmission, ActionResult } from '@/types/domain';
+import type { Event, EventStatus, ActionResult } from '@/types/domain';
 
 export class EventService {
     // ============================================
@@ -25,52 +25,57 @@ export class EventService {
     /**
      * Get all events
      */
-    async getEvents(): Promise<Event[]> {
-        return eventRepository.findMany();
+    async getEvents(plannerId: string): Promise<Event[]> {
+        return eventRepository.findByPlannerId(plannerId);
     }
 
     /**
      * Get event by ID
      */
-    async getEvent(id: string): Promise<Event | null> {
-        return eventRepository.findById(id);
+    async getEvent(id: string, plannerId: string): Promise<Event | null> {
+        const event = await eventRepository.findById(id);
+        if (!event || event.plannerId !== plannerId) {
+            return null;
+        }
+
+        return event;
     }
 
     /**
      * Get events by status
      */
-    async getEventsByStatus(status: EventStatus): Promise<Event[]> {
-        return eventRepository.findByStatus(status);
+    async getEventsByStatus(status: EventStatus, plannerId: string): Promise<Event[]> {
+        return eventRepository.findByStatus(status, plannerId);
     }
 
     /**
      * Get upcoming events
      */
-    async getUpcomingEvents(): Promise<Event[]> {
-        return eventRepository.findUpcoming();
+    async getUpcomingEvents(plannerId: string): Promise<Event[]> {
+        return eventRepository.findUpcoming(plannerId);
     }
 
     /**
      * Get today's events
      */
-    async getTodayEvents(): Promise<Event[]> {
-        return eventRepository.findToday();
+    async getTodayEvents(plannerId: string): Promise<Event[]> {
+        return eventRepository.findToday(plannerId);
     }
 
     /**
      * Get dashboard stats
      */
-    async getDashboardStats(): Promise<{
+    async getDashboardStats(plannerId: string): Promise<{
         total: number;
         byStatus: Record<EventStatus, number>;
         upcomingCount: number;
         todayCount: number;
     }> {
         const [all, statusCounts, upcoming, today] = await Promise.all([
-            eventRepository.findMany(),
-            eventRepository.getStatusCounts(),
-            eventRepository.findUpcoming(),
-            eventRepository.findToday(),
+            eventRepository.findByPlannerId(plannerId),
+            eventRepository.getStatusCounts(plannerId),
+            eventRepository.findUpcoming(plannerId),
+            eventRepository.findToday(plannerId),
         ]);
 
         return {
@@ -153,8 +158,8 @@ export class EventService {
     /**
      * Update event
      */
-    async updateEvent(id: string, data: Partial<Event>): Promise<ActionResult<Event>> {
-        const event = await eventRepository.findById(id);
+    async updateEvent(id: string, data: Partial<Event>, plannerId: string): Promise<ActionResult<Event>> {
+        const event = await this.getEvent(id, plannerId);
         if (!event) {
             return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
         }
@@ -169,8 +174,8 @@ export class EventService {
     /**
      * Update event status (with state machine validation)
      */
-    async updateEventStatus(id: string, newStatus: EventStatus): Promise<ActionResult<Event>> {
-        const event = await eventRepository.findById(id);
+    async updateEventStatus(id: string, newStatus: EventStatus, plannerId: string): Promise<ActionResult<Event>> {
+        const event = await this.getEvent(id, plannerId);
         if (!event) {
             return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
         }
@@ -190,8 +195,8 @@ export class EventService {
     /**
      * Send proposal to client
      */
-    async sendProposal(eventId: string): Promise<ActionResult<Event>> {
-        const event = await eventRepository.findById(eventId);
+    async sendProposal(eventId: string, plannerId: string): Promise<ActionResult<Event>> {
+        const event = await this.getEvent(eventId, plannerId);
         if (!event) {
             return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
         }
@@ -200,14 +205,14 @@ export class EventService {
             return { success: false, error: 'Event is not in planning status', code: 'INVALID_STATE' };
         }
 
-        return this.updateEventStatus(eventId, 'proposed');
+        return this.updateEventStatus(eventId, 'proposed', plannerId);
     }
 
     /**
      * Approve event (lock it)
      */
-    async approveEvent(eventId: string): Promise<ActionResult<Event>> {
-        const event = await eventRepository.findById(eventId);
+    async approveEvent(eventId: string, plannerId: string): Promise<ActionResult<Event>> {
+        const event = await this.getEvent(eventId, plannerId);
         if (!event) {
             return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
         }
@@ -221,14 +226,14 @@ export class EventService {
         // - Notify vendors (future)
         // - Lock all proposals (future)
 
-        return this.updateEventStatus(eventId, 'approved');
+        return this.updateEventStatus(eventId, 'approved', plannerId);
     }
 
     /**
      * Archive event
      */
-    async archiveEvent(eventId: string): Promise<ActionResult<Event>> {
-        const event = await eventRepository.findById(eventId);
+    async archiveEvent(eventId: string, plannerId: string): Promise<ActionResult<Event>> {
+        const event = await this.getEvent(eventId, plannerId);
         if (!event) {
             return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
         }
@@ -241,14 +246,14 @@ export class EventService {
             };
         }
 
-        return this.updateEventStatus(eventId, 'archived');
+        return this.updateEventStatus(eventId, 'archived', plannerId);
     }
 
     /**
      * Delete event (only drafts)
      */
-    async deleteEvent(id: string): Promise<ActionResult<void>> {
-        const event = await eventRepository.findById(id);
+    async deleteEvent(id: string, plannerId: string): Promise<ActionResult<void>> {
+        const event = await this.getEvent(id, plannerId);
         if (!event) {
             return { success: false, error: 'Event not found', code: 'NOT_FOUND' };
         }

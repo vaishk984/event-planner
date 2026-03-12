@@ -31,14 +31,20 @@ class SupabaseEventRepositoryClass extends SupabaseBaseRepository<Event> {
     /**
      * Find events by status
      */
-    async findByStatus(status: EventStatus): Promise<Event[]> {
+    async findByStatus(status: EventStatus, plannerId?: string): Promise<Event[]> {
         const supabase = await this.getClient()
 
-        const { data, error } = await supabase
+        let query = supabase
             .from(this.tableName)
             .select('*')
             .eq('status', status)
             .order('created_at', { ascending: false })
+
+        if (plannerId) {
+            query = query.eq('planner_id', plannerId)
+        }
+
+        const { data, error } = await query
 
         if (error) return []
         return this.fromDbArray(data || [])
@@ -62,18 +68,24 @@ class SupabaseEventRepositoryClass extends SupabaseBaseRepository<Event> {
     /**
      * Find upcoming events (next 30 days)
      */
-    async findUpcoming(): Promise<Event[]> {
+    async findUpcoming(plannerId?: string): Promise<Event[]> {
         const supabase = await this.getClient()
 
         const now = new Date().toISOString()
         const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
-        const { data, error } = await supabase
+        let query = supabase
             .from(this.tableName)
             .select('*')
             .gte('event_date', now)
             .lte('event_date', thirtyDaysLater)
             .order('event_date', { ascending: true })
+
+        if (plannerId) {
+            query = query.eq('planner_id', plannerId)
+        }
+
+        const { data, error } = await query
 
         if (error) return []
         return this.fromDbArray(data || [])
@@ -82,7 +94,7 @@ class SupabaseEventRepositoryClass extends SupabaseBaseRepository<Event> {
     /**
      * Find today's events
      */
-    async findToday(): Promise<Event[]> {
+    async findToday(plannerId?: string): Promise<Event[]> {
         const supabase = await this.getClient()
 
         const today = new Date()
@@ -93,11 +105,17 @@ class SupabaseEventRepositoryClass extends SupabaseBaseRepository<Event> {
         endToday.setHours(23, 59, 59, 999)
         const endOfDay = endToday.toISOString()
 
-        const { data, error } = await supabase
+        let query = supabase
             .from(this.tableName)
             .select('*')
             .gte('event_date', startOfDay)
             .lte('event_date', endOfDay)
+
+        if (plannerId) {
+            query = query.eq('planner_id', plannerId)
+        }
+
+        const { data, error } = await query
 
         if (error) return []
         return this.fromDbArray(data || [])
@@ -129,7 +147,7 @@ class SupabaseEventRepositoryClass extends SupabaseBaseRepository<Event> {
     /**
      * Get event counts by status
      */
-    async getStatusCounts(): Promise<Record<EventStatus, number>> {
+    async getStatusCounts(plannerId?: string): Promise<Record<EventStatus, number>> {
         const supabase = await this.getClient()
 
         const counts: Record<string, number> = {
@@ -143,9 +161,15 @@ class SupabaseEventRepositoryClass extends SupabaseBaseRepository<Event> {
             archived: 0,
         }
 
-        const { data, error } = await supabase
+        let query = supabase
             .from(this.tableName)
             .select('status')
+
+        if (plannerId) {
+            query = query.eq('planner_id', plannerId)
+        }
+
+        const { data, error } = await query
 
         if (!error && data) {
             data.forEach((event: any) => {

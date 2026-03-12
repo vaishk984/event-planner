@@ -13,7 +13,7 @@ import {
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { approveEvent } from '@/lib/actions/event-actions'
+import { approveEvent, getEvent, updateEventStatus } from '@/lib/actions/event-actions'
 import { getRequestsForEvent } from '@/actions/booking'
 import type { Event, EventVendor } from '@/types/domain'
 
@@ -63,7 +63,6 @@ interface VendorCategory {
 export default function ProposalPreviewPage() {
     const params = useParams()
     const eventId = params.id as string
-    const proposalId = params.proposalId as string
 
     const router = useRouter()
     const [loading, setLoading] = useState(true)
@@ -81,19 +80,16 @@ export default function ProposalPreviewPage() {
             setLoading(true)
             const supabase = createClient()
 
-            // Fetch event details
-            const { data: eventData, error: eventError } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', eventId)
-                .single()
+            const eventData = await getEvent(eventId)
+            if (!eventData) {
+                setEvent(null)
+                setTimeline([])
+                setCategories([])
+                setLoading(false)
+                return
+            }
 
-            if (eventError) throw eventError
-            setEvent({
-                ...eventData,
-                guestCount: eventData.guest_count,
-                budgetMax: eventData.budget_max
-            } as Event)
+            setEvent(eventData)
 
             // Fetch timeline items
             const { data: timelineData } = await supabase
@@ -115,7 +111,7 @@ export default function ProposalPreviewPage() {
                 .map((req: any) => {
                     const isCatering = req.vendorCategory === 'catering' || req.vendorCategory?.includes('food')
                     const unitPrice = req.quotedAmount || req.vendorPrice || 0
-                    const guestCount = eventData.guest_count || 350
+                    const guestCount = eventData.guestCount || 350
                     const totalPrice = isCatering ? unitPrice * guestCount : unitPrice
 
                     return {
@@ -145,16 +141,10 @@ export default function ProposalPreviewPage() {
         try {
             setApproving(true)
 
-            // First, ensure event is in 'proposed' status
-            // The approveEvent function requires status to be 'proposed'
-            const supabase = createClient()
-            const { error: updateError } = await supabase
-                .from('events')
-                .update({ status: 'proposed' })
-                .eq('id', eventId)
-
-            if (updateError) {
-                throw updateError
+            const proposedResult = await updateEventStatus(eventId, 'proposed')
+            if (!proposedResult.success) {
+                alert(`Failed to prepare proposal approval: ${proposedResult.error}`)
+                return
             }
 
             // Now approve the event

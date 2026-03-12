@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { EventPlan, DEFAULT_EVENT_PLAN } from '@/lib/types/event-plan'
+import { EventPlan } from '@/lib/types/event-plan'
 import { getEventVendors } from '@/lib/actions/event-vendor-actions'
 
 // Selected vendor from Showroom
@@ -58,56 +58,35 @@ interface EventContextType {
 
 const EventContext = createContext<EventContextType | undefined>(undefined)
 
-// Mock events for demo
-const INITIAL_EVENTS: EventData[] = [
-    {
-        id: 'evt-001',
-        name: 'Sharma Wedding',
-        status: 'designing',
-        requirements: DEFAULT_EVENT_PLAN,
-        selectedVendors: [
-            { id: 'v1', name: 'The Grand Palace Hotel', category: 'venue', service: 'Grand Ballroom', cost: 500000 },
-            { id: 'c1', name: 'Spice Symphony Caterers', category: 'catering', service: 'Wedding Feast', cost: 480000 },
-        ],
-        designNotes: 'Client prefers traditional decor with modern touches. Budget is flexible for venue.',
-        proposalVersion: 1,
-        proposalLocked: false,
-        createdAt: new Date('2025-01-15'),
-        updatedAt: new Date()
-    },
-    {
-        id: 'evt-002',
-        name: 'TechCorp Annual Gala',
-        status: 'proposal_sent',
-        requirements: {
-            ...DEFAULT_EVENT_PLAN,
-            basics: { ...DEFAULT_EVENT_PLAN.basics, eventName: 'TechCorp Annual Gala', eventType: 'corporate' }
-        },
-        selectedVendors: [
-            { id: 'v2', name: 'Royal Heritage Lawns', category: 'venue', service: 'Main Lawn', cost: 200000 },
-        ],
-        designNotes: 'Corporate event - keep it professional.',
-        proposalVersion: 2,
-        proposalLocked: false,
-        createdAt: new Date('2025-02-10'),
-        updatedAt: new Date()
-    }
-]
+function getActiveEventStorageKey(userId?: string | null) {
+    return `planner_active_event:${userId || 'guest'}`
+}
 
-export function EventProvider({ children }: { children: ReactNode }) {
-    const [events, setEvents] = useState<EventData[]>(INITIAL_EVENTS)
+export function EventProvider({
+    children,
+    userId,
+}: {
+    children: ReactNode
+    userId?: string | null
+}) {
+    const [events, setEvents] = useState<EventData[]>([])
     const [activeEvent, setActiveEvent] = useState<EventData | null>(null)
+    const storageKey = getActiveEventStorageKey(userId)
 
-    // Persist active event to localStorage
+    // Persist active event per account
     useEffect(() => {
         if (activeEvent) {
-            localStorage.setItem('planner_active_event', JSON.stringify(activeEvent))
+            localStorage.setItem(storageKey, JSON.stringify(activeEvent))
+        } else {
+            localStorage.removeItem(storageKey)
         }
-    }, [activeEvent])
+    }, [activeEvent, storageKey])
 
-    // Load active event on mount
+    // Load active event for the current account
     useEffect(() => {
-        const stored = localStorage.getItem('planner_active_event')
+        setEvents([])
+        setActiveEvent(null)
+        const stored = localStorage.getItem(storageKey)
         if (stored) {
             try {
                 const parsed = JSON.parse(stored)
@@ -115,15 +94,16 @@ export function EventProvider({ children }: { children: ReactNode }) {
                 parsed.createdAt = new Date(parsed.createdAt)
                 parsed.updatedAt = new Date(parsed.updatedAt)
                 setActiveEvent(parsed)
+                setEvents(prev => {
+                    const remaining = prev.filter(event => event.id !== parsed.id)
+                    return [...remaining, parsed]
+                })
             } catch (e) {
                 console.error('Failed to parse stored event', e)
-                localStorage.removeItem('planner_active_event')
+                localStorage.removeItem(storageKey)
             }
-        } else if (events.length > 0) {
-            // Fallback: Set first event as active for demo purposes
-            setActiveEvent(events[0])
         }
-    }, [])
+    }, [storageKey])
 
     // Create new event from wizard requirements
     const createEventFromWizard = (requirements: EventPlan): string => {
@@ -250,7 +230,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
 
     // Get event by ID and load vendors from DB
     const getEventById = async (id: string): Promise<EventData | undefined> => {
-        const event = events.find(e => e.id === id)
+        const event = events.find(e => e.id === id) || (activeEvent?.id === id ? activeEvent : undefined)
         if (!event) return undefined
 
         try {

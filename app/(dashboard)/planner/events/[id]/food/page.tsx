@@ -9,7 +9,8 @@ import { UtensilsCrossed, Star, IndianRupee, CheckCircle2, AlertCircle, Users, L
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getEventVendors, addVendorToEvent, removeVendorFromEvent } from '@/lib/actions/event-vendor-actions'
-import type { Event, EventVendor } from '@/types/domain'
+import type { Event } from '@/types/domain'
+import { getEvent } from '@/lib/actions/event-actions'
 
 interface CatererVendor {
     id: string
@@ -38,16 +39,13 @@ export default function FoodPage() {
             setLoading(true)
             const supabase = createClient()
 
-            // Fetch event details
-            const { data: eventData, error: eventError } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', eventId)
-                .single()
+            const eventData = await getEvent(eventId)
+            if (!eventData) {
+                setEvent(null)
+                return
+            }
 
-            if (eventError) throw eventError
-
-            setEvent(eventData as Event)
+            setEvent(eventData)
 
             // Fetch all available caterers
             const { data: allCaterers, error: caterersError } = await supabase

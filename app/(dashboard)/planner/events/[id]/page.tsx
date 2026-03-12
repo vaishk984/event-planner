@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, notFound, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,11 +13,10 @@ import {
 import { FeasibilityCheck } from '@/components/workspace/feasibility-check'
 import Link from 'next/link'
 import type { Event } from '@/types/domain'
-import { createClient } from '@/lib/supabase/client'
+import { getEvent } from '@/lib/actions/event-actions'
 
 export default function EventOverviewPage() {
     const params = useParams()
-    const router = useRouter()
     const id = params.id as string
 
     const [event, setEvent] = useState<Event | null>(null)
@@ -25,59 +24,19 @@ export default function EventOverviewPage() {
 
     useEffect(() => {
         const loadEvent = async () => {
-            const supabase = createClient()
+            const eventData = await getEvent(id)
 
-            const { data, error } = await supabase
-                .from('events')
-                .select('*')
-                .eq('id', id)
-                .single()
-
-            if (error || !data) {
-                const errorMsg = error?.message || 'Event not found (data is null)'
-                console.error('[Event Detail] Error loading event:', errorMsg)
+            if (!eventData) {
                 setLoading(false)
-                // router.push('/planner/events') // DISABLED FOR DEBUGGING
-                setEvent(null) // Ensure event remains null to trigger fallback UI
+                setEvent(null)
                 return
             }
 
-            // Convert snake_case to camelCase manually
-            const eventData: Event = {
-                id: data.id,
-                plannerId: data.planner_id,
-                clientId: data.client_id,
-                submissionId: data.submission_id,
-                status: data.status,
-                type: data.type,
-                name: data.name,
-                publicToken: data.public_token,
-                proposalStatus: data.proposal_status,
-                date: data.date,
-                endDate: data.end_date,
-                isDateFlexible: data.is_date_flexible || false,
-                city: data.city || '',
-                venueType: data.venue_type || 'showroom',
-                venueName: data.venue_name,
-                venueAddress: data.venue_address,
-                guestCount: data.guest_count || 0,
-                budgetMin: data.budget_min || 0,
-                budgetMax: data.budget_max || 0,
-                clientName: data.client_name || '',
-                clientPhone: data.client_phone || '',
-                clientEmail: data.client_email,
-                source: data.source,
-                notes: data.notes,
-                createdAt: data.created_at,
-                updatedAt: data.updated_at,
-            }
-
-            console.log('[Event Detail] Loaded event:', eventData.name)
             setEvent(eventData)
             setLoading(false)
         }
         loadEvent()
-    }, [id, router])
+    }, [id])
 
     if (loading) {
         return (
@@ -343,4 +302,3 @@ export default function EventOverviewPage() {
         </div>
     )
 }
-
