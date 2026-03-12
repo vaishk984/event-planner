@@ -11,25 +11,8 @@ import {
     Loader2, ExternalLink, Copy, Eye
 } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-
-interface ProposalRow {
-    id: string
-    event_id: string
-    version: number
-    token: string
-    status: string
-    snapshot_data: any
-    client_feedback: string | null
-    created_at: string
-    // joined from events
-    event_name?: string
-    client_name?: string
-    event_date?: string
-    guest_count?: number
-    city?: string
-}
+import { getPlannerProposalSnapshots, type PlannerProposalSnapshot } from '@/lib/actions/proposal-actions'
 
 function getStatusColor(status: string) {
     switch (status) {
@@ -52,9 +35,9 @@ function getStatusLabel(status: string) {
 }
 
 export default function ProposalsPage() {
-    const [proposals, setProposals] = useState<ProposalRow[]>([])
+    const [proposals, setProposals] = useState<PlannerProposalSnapshot[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedProposal, setSelectedProposal] = useState<ProposalRow | null>(null)
+    const [selectedProposal, setSelectedProposal] = useState<PlannerProposalSnapshot | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
     useEffect(() => {
@@ -62,44 +45,15 @@ export default function ProposalsPage() {
     }, [])
 
     const fetchProposals = async () => {
-        const supabase = createClient()
-
-        // Fetch all proposal snapshots with event info
-        const { data, error } = await supabase
-            .from('proposal_snapshots')
-            .select('*, events!inner(name, client_name, date, guest_count, city)')
-            .order('created_at', { ascending: false })
-
-        if (error) {
+        try {
+            const data = await getPlannerProposalSnapshots()
+            setProposals(data)
+        } catch (error) {
             console.error('Error fetching proposals:', error)
-            // Fallback: fetch without join
-            const { data: fallbackData } = await supabase
-                .from('proposal_snapshots')
-                .select('*')
-                .order('created_at', { ascending: false })
-
-            const mapped = (fallbackData || []).map((p: any) => ({
-                ...p,
-                event_name: p.snapshot_data?.eventName || 'Unknown Event',
-                client_name: p.snapshot_data?.clientName || 'Unknown Client',
-                event_date: p.snapshot_data?.date || '',
-                guest_count: p.snapshot_data?.guestCount || 0,
-                city: p.snapshot_data?.city || '',
-            }))
-            setProposals(mapped)
-        } else {
-            const mapped = (data || []).map((p: any) => ({
-                ...p,
-                event_name: p.events?.name || p.snapshot_data?.eventName || 'Unknown Event',
-                client_name: p.events?.client_name || p.snapshot_data?.clientName || 'Unknown Client',
-                event_date: p.events?.date || p.snapshot_data?.date || '',
-                guest_count: p.events?.guest_count || p.snapshot_data?.guestCount || 0,
-                city: p.events?.city || p.snapshot_data?.city || '',
-            }))
-            setProposals(mapped)
+            setProposals([])
+        } finally {
+            setLoading(false)
         }
-
-        setLoading(false)
     }
 
     const copyLink = (token: string) => {
