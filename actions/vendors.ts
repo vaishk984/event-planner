@@ -38,7 +38,7 @@ const updateVendorSchema = createVendorSchema.partial().extend({
 export async function getVendors() {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
@@ -73,7 +73,7 @@ export async function getVendors() {
 export async function createVendor(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
@@ -135,7 +135,7 @@ export async function createVendor(formData: FormData) {
 export async function updateVendor(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
@@ -209,7 +209,7 @@ export async function updateVendor(formData: FormData) {
 export async function deleteVendor(id: string) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 

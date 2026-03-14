@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function getNotifications() {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { notifications: [], unreadCount: 0 }
 
@@ -39,7 +39,7 @@ export async function markNotificationRead(notificationId: string) {
 
 export async function markAllNotificationsRead() {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Not authenticated' }
 

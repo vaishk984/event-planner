@@ -44,7 +44,7 @@ const createFunctionSchema = z.object({
 export async function getTimelineData(eventId: string) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
@@ -85,7 +85,7 @@ export async function getTimelineData(eventId: string) {
 export async function createTimelineItem(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 

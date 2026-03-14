@@ -1,16 +1,15 @@
-
 import { CaptureClientWrapper } from './capture-client'
-import { getCurrentUser } from '@/actions/auth/login'
+import { getUserId } from '@/lib/session'
 import { redirect } from 'next/navigation'
 
 export default async function CapturePage() {
-    const user = await getCurrentUser()
+    const userId = await getUserId()
 
-    if (!user) {
+    if (!userId) {
         redirect('/login')
     }
 
     const token = `capture_${Date.now().toString(36)}`
 
-    return <CaptureClientWrapper token={token} plannerId={user.id} />
+    return <CaptureClientWrapper token={token} plannerId={userId} />
 }

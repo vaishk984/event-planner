@@ -106,7 +106,7 @@ export async function markVendorArrival(eventId: string) {
 export async function uploadEventPhoto(formData: FormData) {
     const supabase = await createClient()
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
@@ -278,7 +278,7 @@ export async function getEventDayVendors(eventId: string) {
 export async function getVendorEventDayData() {
     const supabase = await createClient()
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { events: [], updates: [] }
 

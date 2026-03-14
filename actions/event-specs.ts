@@ -24,7 +24,7 @@ export interface CategorySpecData {
  */
 export async function getEventSpecs(eventId: string): Promise<{ data: CategorySpecData[] | null; error?: string }> {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { data: null, error: 'Unauthorized' }
 
@@ -59,7 +59,7 @@ export async function getEventSpecs(eventId: string): Promise<{ data: CategorySp
  */
 export async function saveEventSpecs(eventId: string, categories: CategorySpecData[]) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 

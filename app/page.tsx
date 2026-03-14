@@ -1,23 +1,13 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 
 export default async function HomePage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const session = await getSession()
 
-  if (!user) {
-    redirect('/login')
-  }
+    if (!session) {
+        redirect('/login')
+    }
 
-  // Check if user has vendor record
-  const { data: vendorRecord } = await supabase
-    .from('vendors')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  // Redirect based on role
-  const role = vendorRecord ? 'vendor' : 'planner'
-  redirect(`/${role}`)
+    // Redirect based on role already determined by getSession()
+    redirect(`/${session.role}`)
 }

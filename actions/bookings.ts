@@ -13,7 +13,7 @@ import { bookingService } from '@/lib/services/booking-service'
 export async function getEventBookings(eventId: string) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
@@ -30,7 +30,7 @@ export async function getEventBookings(eventId: string) {
 export async function createBookingRequest(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 
@@ -62,7 +62,7 @@ export async function createBookingRequest(formData: FormData) {
 export async function updateBookingStatus(formData: FormData) {
     try {
         const supabase = await createClient()
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const session = await getSession(); const authError = null;
         const user = session?.user;
         if (authError || !user) return { error: 'Unauthorized' }
 

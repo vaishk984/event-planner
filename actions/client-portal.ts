@@ -228,7 +228,7 @@ export async function sendClientMessage(token: string, message: string) {
  */
 export async function sendPlannerMessage(eventId: string, message: string) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
@@ -258,7 +258,7 @@ export async function sendPlannerMessage(eventId: string, message: string) {
  */
 export async function getOrCreateClientToken(eventId: string) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
@@ -301,7 +301,7 @@ export async function getOrCreateClientToken(eventId: string) {
  */
 export async function sendFinalProposal(eventId: string) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 
@@ -599,7 +599,7 @@ export async function updateFinalProposalStatus(token: string, status: string, f
  */
 export async function generateProposalToken(eventId: string) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSession();
     const user = session?.user;
     if (!user) return { error: 'Unauthorized' }
 

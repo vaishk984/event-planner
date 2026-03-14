@@ -1,7 +1,13 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 
-export async function createClient() {
+// CRITICAL: cache() ensures a single Supabase client per server request.
+// Without this, each Server Component creates a separate client. When one
+// client's getUser() refreshes the auth token, setAll() silently fails in
+// Server Components, so subsequent clients read stale cookies and fail.
+// By sharing ONE cached client, all components reuse the same validated token.
+export const createClient = cache(async () => {
     const cookieStore = await cookies()
 
     return createServerClient(
@@ -19,21 +25,22 @@ export async function createClient() {
                         })
                     } catch (error) {
                         // The `setAll` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
+                        // This can be ignored if you have middleware/proxy refreshing
                         // user sessions.
                     }
                 },
             },
         }
     )
-}
+})
 
 /**
  * Get current user session
  */
 export async function getUser() {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     return user || null
 }
 

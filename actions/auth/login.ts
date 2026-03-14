@@ -152,19 +152,7 @@ export async function logout() {
 }
 
 /**
- * Get current session
- */
-export async function getSession() {
-    const supabase = await createClient()
-    const user = await getAuthenticatedUser()
 
-    if (!user) {
-        return null
-    }
-
-    const { data: { session } } = await supabase.auth.getSession()
-    return session || ({ user } as unknown as NonNullable<typeof session>)
-}
 
 /**
  * Get current user with profile
