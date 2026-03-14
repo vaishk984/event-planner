@@ -1,16 +1,17 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 
 export async function getNotifications() {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { notifications: [], unreadCount: 0 }
+    
+    if (!session?.userId) return { notifications: [], unreadCount: 0 }
 
     const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', session?.userId)
         .order('created_at', { ascending: false })
         .limit(20)
 
@@ -40,13 +41,13 @@ export async function markNotificationRead(notificationId: string) {
 export async function markAllNotificationsRead() {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Not authenticated' }
+    
+    if (!session?.userId) return { error: 'Not authenticated' }
 
     const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('user_id', user.id)
+        .eq('user_id', session?.userId)
         .eq('is_read', false)
 
     if (error) {

@@ -1,4 +1,5 @@
 'use server'
+import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -229,8 +230,8 @@ export async function sendClientMessage(token: string, message: string) {
 export async function sendPlannerMessage(eventId: string, message: string) {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    
+    if (!session?.userId) return { error: 'Unauthorized' }
 
     const { error } = await supabase
         .from('client_messages')
@@ -259,15 +260,15 @@ export async function sendPlannerMessage(eventId: string, message: string) {
 export async function getOrCreateClientToken(eventId: string) {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    
+    if (!session?.userId) return { error: 'Unauthorized' }
 
     // First check if token already exists
     const { data: event } = await supabase
         .from('events')
         .select('client_token')
         .eq('id', eventId)
-        .eq('planner_id', user.id)
+        .eq('planner_id', session?.userId)
         .single()
 
     if (!event) return { error: 'Event not found' }
@@ -281,7 +282,7 @@ export async function getOrCreateClientToken(eventId: string) {
         .from('events')
         .update({ client_token: crypto.randomUUID() })
         .eq('id', eventId)
-        .eq('planner_id', user.id)
+        .eq('planner_id', session?.userId)
         .select('client_token')
         .single()
 
@@ -302,8 +303,8 @@ export async function getOrCreateClientToken(eventId: string) {
 export async function sendFinalProposal(eventId: string) {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    
+    if (!session?.userId) return { error: 'Unauthorized' }
 
     const finalToken = crypto.randomUUID()
 
@@ -312,7 +313,7 @@ export async function sendFinalProposal(eventId: string) {
         .from('events')
         .select('proposal_version')
         .eq('id', eventId)
-        .eq('planner_id', user.id)
+        .eq('planner_id', session?.userId)
         .single()
 
     const newVersion = ((event as any)?.proposal_version || 0) + 1
@@ -325,7 +326,7 @@ export async function sendFinalProposal(eventId: string) {
             proposal_version: newVersion,
         })
         .eq('id', eventId)
-        .eq('planner_id', user.id)
+        .eq('planner_id', session?.userId)
 
     if (error) {
         console.error('Error sending final proposal:', error)
@@ -600,8 +601,8 @@ export async function updateFinalProposalStatus(token: string, status: string, f
 export async function generateProposalToken(eventId: string) {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    
+    if (!session?.userId) return { error: 'Unauthorized' }
 
     const token = crypto.randomUUID()
 
@@ -609,7 +610,7 @@ export async function generateProposalToken(eventId: string) {
         .from('events')
         .update({ public_token: token, proposal_status: 'sent' })
         .eq('id', eventId)
-        .eq('planner_id', user.id)
+        .eq('planner_id', session?.userId)
 
     if (error) {
         console.error('generateProposalToken error:', error)

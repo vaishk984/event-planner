@@ -29,7 +29,7 @@ export async function createBookingRequest(data: {
     const { data: profile } = await supabase
         .from('user_profiles')
         .select('id')
-        .eq('id', user.id)
+        .eq('id', session?.userId)
         .single()
 
     if (!profile) {
@@ -37,7 +37,7 @@ export async function createBookingRequest(data: {
         const { error: profileError } = await supabase
             .from('user_profiles')
             .insert({
-                id: user.id,
+                id: session?.userId,
                 company_name: (user as any).user_metadata?.company_name || 'My Company'
             })
 
@@ -50,7 +50,7 @@ export async function createBookingRequest(data: {
         const { error: plannerError } = await supabase
             .from('planner_profiles')
             .upsert({
-                id: user.id,
+                id: session?.userId,
                 company_name: (user as any).user_metadata?.company_name || 'My Company'
             })
 
@@ -79,7 +79,7 @@ export async function createBookingRequest(data: {
         .insert({
             event_id: data.eventId,
             vendor_id: data.vendorId,
-            planner_id: user.id,
+            planner_id: session?.userId,
             event_name: data.eventName,
             event_date: data.eventDate,
             city: data.city,
@@ -187,7 +187,7 @@ export async function deleteBookingRequest(eventId: string, vendorId: string) {
         .delete()
         .eq('event_id', eventId)
         .eq('vendor_id', vendorId)
-        .eq('planner_id', user.id) // Security check
+        .eq('planner_id', session?.userId) // Security check
 
     if (error) {
         console.error('Error deleting booking request:', error)

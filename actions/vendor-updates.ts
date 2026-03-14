@@ -33,7 +33,7 @@ export async function submitVendorUpdate(data: {
     const { data: vendor } = await supabase
         .from('vendors')
         .select('id, company_name')
-        .eq('user_id', user.id)
+        .eq('user_id', session?.userId)
         .single()
 
     if (!vendor) {
@@ -107,15 +107,15 @@ export async function uploadEventPhoto(formData: FormData) {
     const supabase = await createClient()
 
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    
+    if (!session?.userId) return { error: 'Unauthorized' }
 
     const file = formData.get('file') as File
     if (!file) return { error: 'No file provided' }
 
     const eventId = formData.get('eventId') as string
     const ext = file.name.split('.').pop()
-    const fileName = `${eventId}/${user.id}/${Date.now()}.${ext}`
+    const fileName = `${eventId}/${session?.userId}/${Date.now()}.${ext}`
 
     const { data, error } = await supabase.storage
         .from('event-photos')
@@ -279,14 +279,14 @@ export async function getVendorEventDayData() {
     const supabase = await createClient()
 
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { events: [], updates: [] }
+    
+    if (!session?.userId) return { events: [], updates: [] }
 
     // Get vendor profile
     const { data: vendor } = await supabase
         .from('vendors')
         .select('id, company_name')
-        .eq('user_id', user.id)
+        .eq('user_id', session?.userId)
         .single()
 
     if (!vendor) return { events: [], updates: [] }

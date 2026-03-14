@@ -68,7 +68,7 @@ export async function getLeads() {
         const { data, error } = await supabase
             .from('clients')
             .select('*')
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .eq('status', 'prospect') // Only leads, not active clients
             .order('score', { ascending: false }) // Hot leads first
             .order('created_at', { ascending: false })
@@ -102,7 +102,7 @@ export async function getLead(id: string) {
             .from('clients')
             .select('*')
             .eq('id', id)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .eq('status', 'prospect')
             .single()
 
@@ -162,7 +162,7 @@ export async function createLead(formData: FormData) {
         const { data, error } = await supabase
             .from('clients')
             .insert({
-                planner_id: user.id,
+                planner_id: session?.userId,
                 name: validData.name,
                 email: validData.email || null,
                 phone: validData.phone,
@@ -239,7 +239,7 @@ export async function updateLead(formData: FormData) {
                 score: score,
             })
             .eq('id', id)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .select()
             .single()
 
@@ -273,7 +273,7 @@ export async function deleteLead(id: string) {
             .from('clients')
             .delete()
             .eq('id', id)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
 
         if (error) {
             console.error('Error deleting lead:', error)
@@ -306,7 +306,7 @@ export async function convertLeadToEvent(leadId: string) {
             .from('clients')
             .select('*')
             .eq('id', leadId)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .single()
 
         if (leadError || !lead) {
@@ -317,7 +317,7 @@ export async function convertLeadToEvent(leadId: string) {
         const { data: event, error: eventError } = await supabase
             .from('events')
             .insert({
-                planner_id: user.id,
+                planner_id: session?.userId,
                 name: `${lead.name}'s ${lead.event_type}`,
                 type: lead.event_type.toLowerCase(),
                 event_category: lead.event_type.toLowerCase(),
@@ -337,7 +337,7 @@ export async function convertLeadToEvent(leadId: string) {
             .from('clients')
             .update({ status: 'active' })
             .eq('id', leadId)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
 
         revalidatePath('/planner/leads')
         revalidatePath('/planner/events')

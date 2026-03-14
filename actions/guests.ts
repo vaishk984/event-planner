@@ -69,7 +69,7 @@ export async function getGuests(eventId: string) {
             .from('events')
             .select('id')
             .eq('id', eventId)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .single()
 
         if (eventError || !event) {
@@ -133,7 +133,7 @@ export async function createGuest(formData: FormData) {
             .from('events')
             .select('id')
             .eq('id', validData.eventId)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .single()
 
         if (eventError || !event) {
@@ -289,7 +289,7 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
             .from('events')
             .select('id')
             .eq('id', eventId)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .single()
 
         if (eventError || !event) {

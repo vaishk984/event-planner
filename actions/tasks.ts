@@ -76,7 +76,7 @@ export async function getTasks(filters?: {
                 events!inner(name, planner_id),
                 vendors(company_name)
             `)
-            .eq('events.planner_id', user.id) // RLS + explicit filter
+            .eq('events.planner_id', session?.userId) // RLS + explicit filter
 
         // Apply filters
         if (filters?.eventId) {
@@ -128,7 +128,7 @@ export async function getAtRiskTasks() {
                 *,
                 events!inner(name, planner_id)
             `)
-            .eq('events.planner_id', user.id)
+            .eq('events.planner_id', session?.userId)
             .neq('status', 'completed')
             .neq('status', 'verified')
             .lt('due_date', tomorrow.toISOString())
@@ -183,7 +183,7 @@ export async function createTask(formData: FormData) {
             .from('events')
             .select('id')
             .eq('id', validData.eventId)
-            .eq('planner_id', user.id)
+            .eq('planner_id', session?.userId)
             .single()
 
         if (eventError || !event) {
@@ -281,7 +281,7 @@ export async function updateTask(formData: FormData) {
         }
 
         // Verify ownership
-        if ((data as any).events.planner_id !== user.id) {
+        if ((data as any).events.planner_id !== session?.userId) {
             return { error: 'Unauthorized' }
         }
 
@@ -317,7 +317,7 @@ export async function deleteTask(id: string) {
             return { error: 'Task not found' }
         }
 
-        if ((task as any).events.planner_id !== user.id) {
+        if ((task as any).events.planner_id !== session?.userId) {
             return { error: 'Unauthorized' }
         }
 

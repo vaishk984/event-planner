@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getAuthenticatedUser, resolveDisplayName } from '@/lib/session'
+import { getSession, resolveDisplayName } from '@/lib/session'
 import { DashboardData, DashboardLead, DashboardTask, DashboardVendor, TodayEvent } from '@/types/dashboard'
 import { endOfDay, formatDistanceToNow, startOfDay } from 'date-fns'
 
@@ -49,19 +49,19 @@ function formatSupabaseError(error: unknown): string | null {
 export async function getDashboardData(): Promise<DashboardData> {
     try {
         const supabase = await createClient()
-        const user = await getAuthenticatedUser()
+        const session = await getSession()
 
-        if (!user) {
+        if (!session?.userId) {
             return createEmptyDashboardData()
         }
 
         const { data: profile, error: profileError } = await supabase
             .from('user_profiles')
             .select('display_name')
-            .eq('id', user.id)
+            .eq('id', session?.userId)
             .maybeSingle()
 
-        const displayName = resolveDisplayName(user, profile?.display_name, 'planner')
+        const displayName = session.displayName || profile?.display_name || 'Planner'
 
         if (profileError && process.env.NODE_ENV === 'development') {
             console.warn('Dashboard profile unavailable:', formatSupabaseError(profileError))
@@ -78,42 +78,42 @@ export async function getDashboardData(): Promise<DashboardData> {
         ] = await Promise.all([
             supabase.from('events')
                 .select('id', { count: 'exact' })
-                .eq('planner_id', user.id)
+                .eq('planner_id', session?.userId)
                 .neq('status', 'completed'),
 
             supabase.from('clients')
                 .select('id', { count: 'exact' })
-                .eq('planner_id', user.id)
+                .eq('planner_id', session?.userId)
                 .eq('status', 'prospect'),
 
             supabase.from('financial_payments')
                 .select('amount, events!inner(planner_id)')
-                .eq('events.planner_id', user.id)
+                .eq('events.planner_id', session?.userId)
                 .eq('status', 'completed')
                 .eq('type', 'client_payment'),
 
             supabase.from('financial_payments')
                 .select('amount, events!inner(planner_id)')
-                .eq('events.planner_id', user.id)
+                .eq('events.planner_id', session?.userId as string)
                 .eq('status', 'pending')
                 .eq('type', 'client_payment'),
 
             supabase.from('event_functions')
                 .select('id, name, start_time, type, events!inner(planner_id)')
-                .eq('events.planner_id', user.id)
+                .eq('events.planner_id', session?.userId as string)
                 .gte('date', startOfDay(new Date()).toISOString())
                 .lte('date', endOfDay(new Date()).toISOString()),
 
             supabase.from('clients')
                 .select('*')
-                .eq('planner_id', user.id)
+                .eq('planner_id', session?.userId as string)
                 .eq('status', 'prospect')
                 .order('created_at', { ascending: false })
                 .limit(5),
 
             supabase.from('tasks')
                 .select('id, title, due_date, events!inner(name, planner_id)')
-                .eq('events.planner_id', user.id)
+                .eq('events.planner_id', session?.userId)
                 .neq('status', 'completed')
                 .lt('due_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
                 .limit(5),

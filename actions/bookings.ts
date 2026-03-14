@@ -1,4 +1,5 @@
 'use server'
+import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { bookingService } from '@/lib/services/booking-service'
@@ -14,10 +15,10 @@ export async function getEventBookings(eventId: string) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
-        return bookingService.getEventBookings(eventId, user.id)
+        return bookingService.getEventBookings(eventId, session?.userId)
     } catch (error) {
         console.error('Unexpected error in getEventBookings:', error)
         return { error: 'An unexpected error occurred' }
@@ -31,8 +32,8 @@ export async function createBookingRequest(formData: FormData) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         const input = {
             eventId: formData.get('eventId'),
@@ -43,7 +44,7 @@ export async function createBookingRequest(formData: FormData) {
             status: formData.get('status') || 'draft',
         }
 
-        const result = await bookingService.createBooking(input as Record<string, unknown>, user.id)
+        const result = await bookingService.createBooking(input as Record<string, unknown>, session?.userId)
 
         if (result.success) {
             revalidatePath(`/planner/events/${input.eventId}/vendors`)
@@ -63,14 +64,14 @@ export async function updateBookingStatus(formData: FormData) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         const id = formData.get('id') as string
         const status = formData.get('status') as string
         const eventId = formData.get('eventId') as string
 
-        const result = await bookingService.updateBookingStatus(id, status, user.id)
+        const result = await bookingService.updateBookingStatus(id, status, session?.userId)
 
         if (result.success) {
             revalidatePath(`/planner/events/${eventId}/vendors`)

@@ -1,4 +1,5 @@
 'use server'
+import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -39,8 +40,8 @@ export async function getVendors() {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         // Fetch both:
         // 1. Marketplace vendors (status = 'active', available to all planners)
@@ -48,7 +49,7 @@ export async function getVendors() {
         const { data, error } = await supabase
             .from('vendors')
             .select('*')
-            .or(`planner_id.eq.${user.id},status.eq.active`)
+            .or(`planner_id.eq.${session?.userId},status.eq.active`)
             .order('company_name', { ascending: true })
 
         if (error) {
@@ -74,8 +75,8 @@ export async function createVendor(formData: FormData) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         const rawData = {
             companyName: formData.get('companyName'),
@@ -100,7 +101,7 @@ export async function createVendor(formData: FormData) {
         const { data, error } = await supabase
             .from('vendors')
             .insert({
-                planner_id: user.id,
+                planner_id: session?.userId,
                 company_name: validData.companyName,
                 contact_name: validData.contactName || null,
                 email: validData.email || null,
@@ -136,8 +137,8 @@ export async function updateVendor(formData: FormData) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         const rawData = {
             id: formData.get('id'),
@@ -167,7 +168,7 @@ export async function updateVendor(formData: FormData) {
             .eq('id', id)
             .single()
 
-        if (!existing || existing.planner_id !== user.id) {
+        if (!existing || existing.planner_id !== session?.userId) {
             return { error: 'Unauthorized to update this vendor' }
         }
 
@@ -210,14 +211,14 @@ export async function deleteVendor(id: string) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         const { error } = await supabase
             .from('vendors')
             .delete()
             .eq('id', id)
-            .eq('planner_id', user.id) // Security check in query
+            .eq('planner_id', session?.userId) // Security check in query
 
         if (error) {
             console.error('Error deleting vendor:', error)

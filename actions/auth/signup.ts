@@ -52,7 +52,7 @@ export async function signup(formData: FormData) {
     if (role === 'vendor') {
         console.log('Creating vendor record...')
         const { error: vendorError } = await supabase.from('vendors').insert({
-            user_id: data.user.id,
+            user_id: data.user?.id,
             name: name,
             email: email,
             category: categoryId || 'other',

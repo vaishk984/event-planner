@@ -1,4 +1,5 @@
 'use server'
+import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -25,8 +26,8 @@ export interface CategorySpecData {
 export async function getEventSpecs(eventId: string): Promise<{ data: CategorySpecData[] | null; error?: string }> {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { data: null, error: 'Unauthorized' }
+    
+    if (!session?.userId) return { data: null, error: 'Unauthorized' }
 
     const { data, error } = await supabase
         .from('event_specs')
@@ -60,8 +61,8 @@ export async function getEventSpecs(eventId: string): Promise<{ data: CategorySp
 export async function saveEventSpecs(eventId: string, categories: CategorySpecData[]) {
     const supabase = await createClient()
     const session = await getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    
+    if (!session?.userId) return { error: 'Unauthorized' }
 
     // Upsert each category
     const rows = categories.map(cat => ({

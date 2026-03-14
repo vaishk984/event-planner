@@ -1,4 +1,5 @@
 'use server'
+import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -45,8 +46,8 @@ export async function getTimelineData(eventId: string) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         // Fetch Functions (for grouping)
         const functionsQuery = supabase
@@ -86,8 +87,8 @@ export async function createTimelineItem(formData: FormData) {
     try {
         const supabase = await createClient()
         const session = await getSession(); const authError = null;
-        const user = session?.user;
-        if (authError || !user) return { error: 'Unauthorized' }
+        
+        if (authError || !session?.userId) return { error: 'Unauthorized' }
 
         const rawData = {
             eventId: formData.get('eventId'),
