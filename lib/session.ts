@@ -18,6 +18,49 @@ export async function getAuthenticatedUser() {
     return getAuthenticatedUserFromClient(supabase)
 }
 
+async function ensureUserProfile(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    user: User,
+    role: string,
+    displayName: string
+) {
+    const { data: existingProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, role, display_name')
+        .eq('id', user.id)
+        .maybeSingle()
+
+    if (profileError) {
+        return { role, displayName }
+    }
+
+    if (!existingProfile) {
+        const { error: insertProfileError } = await supabase
+            .from('user_profiles')
+            .insert({
+                id: user.id,
+                role,
+                display_name: displayName,
+            })
+
+        if (!insertProfileError && role === 'planner') {
+            await supabase
+                .from('planner_profiles')
+                .insert({
+                    id: user.id,
+                    company_name: user.user_metadata?.company_name || 'My Company',
+                })
+        }
+
+        return { role, displayName }
+    }
+
+    return {
+        role: existingProfile.role || role,
+        displayName: existingProfile.display_name || displayName,
+    }
+}
+
 export async function getSession() {
     const supabase = await createClient()
     const user = await getAuthenticatedUserFromClient(supabase)
@@ -34,12 +77,16 @@ export async function getSession() {
         .maybeSingle()
 
     let role = 'planner'
-    let displayName = user.email
+    let displayName = user.email || 'Planner'
 
     if (vendorRecord) {
         role = 'vendor'
-        displayName = vendorRecord.company_name || user.email
+        displayName = vendorRecord.company_name || user.email || 'Vendor'
     }
+
+    const ensuredProfile = await ensureUserProfile(supabase, user, role, displayName)
+    role = ensuredProfile.role
+    displayName = ensuredProfile.displayName
 
     return {
         userId: user.id,
