@@ -3,6 +3,22 @@ import { createClient } from '@/lib/supabase/server';
 import { Lead } from '@/actions/leads';
 import { Task } from '@/actions/tasks';
 
+function formatSupabaseError(error: unknown): string {
+    if (!error || typeof error !== 'object') {
+        return 'Unknown error'
+    }
+
+    const candidate = error as {
+        code?: string
+        message?: string
+        details?: string
+    }
+
+    return [candidate.code, candidate.message, candidate.details]
+        .filter(Boolean)
+        .join(' | ') || 'Unknown error'
+}
+
 export async function getLeadsData(): Promise<{ data?: Lead[], error?: string }> {
     try {
         const supabase = await createClient();
@@ -18,7 +34,7 @@ export async function getLeadsData(): Promise<{ data?: Lead[], error?: string }>
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Error fetching leads:', error);
+            console.error('Error fetching leads:', formatSupabaseError(error));
             return { error: 'Failed to fetch leads' };
         }
         return { data: data as Lead[] };
@@ -36,8 +52,8 @@ export async function getTasksData(filters?: { eventId?: string; status?: string
 
         let query = supabase
             .from('tasks')
-            .select('*, events(name), vendors(company_name)')
-            .eq('planner_id', plannerId);
+            .select('*, events!inner(name, planner_id), vendors(company_name)')
+            .eq('events.planner_id', plannerId);
 
         if (filters?.eventId) {
             query = query.eq('event_id', filters.eventId);
@@ -52,7 +68,7 @@ export async function getTasksData(filters?: { eventId?: string; status?: string
         const { data, error } = await query.order('due_date', { ascending: true });
 
         if (error) {
-            console.error('Error fetching tasks:', error);
+            console.error('Error fetching tasks:', formatSupabaseError(error));
             return { error: 'Failed to fetch tasks' };
         }
         return { data: data as Task[] };

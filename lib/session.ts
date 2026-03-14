@@ -18,6 +18,40 @@ export async function getAuthenticatedUser() {
     return getAuthenticatedUserFromClient(supabase)
 }
 
+export function normalizeDisplayName(value?: string | null): string | null {
+    const trimmed = value?.trim()
+
+    if (!trimmed || trimmed.includes('@')) {
+        return null
+    }
+
+    return trimmed
+}
+
+export function getFallbackDisplayName(role?: string | null): string {
+    return role === 'vendor' ? 'Vendor' : 'Planner'
+}
+
+export function resolveDisplayName(
+    user: Pick<User, 'user_metadata'> | null,
+    storedDisplayName?: string | null,
+    role?: string | null
+): string {
+    const metadataDisplayName = normalizeDisplayName(
+        typeof user?.user_metadata?.display_name === 'string'
+            ? user.user_metadata.display_name
+            : typeof user?.user_metadata?.full_name === 'string'
+                ? user.user_metadata.full_name
+                : typeof user?.user_metadata?.name === 'string'
+                    ? user.user_metadata.name
+                    : null
+    )
+
+    return normalizeDisplayName(storedDisplayName)
+        || metadataDisplayName
+        || getFallbackDisplayName(role)
+}
+
 async function ensureUserProfile(
     supabase: Awaited<ReturnType<typeof createClient>>,
     user: User,
@@ -31,19 +65,25 @@ async function ensureUserProfile(
         .maybeSingle()
 
     if (profileError) {
-        return { role, displayName }
+        return {
+            role,
+            displayName: resolveDisplayName(user, displayName, role),
+        }
     }
+
+    const resolvedRole = existingProfile?.role || role
+    const resolvedDisplayName = resolveDisplayName(user, existingProfile?.display_name || displayName, resolvedRole)
 
     if (!existingProfile) {
         const { error: insertProfileError } = await supabase
             .from('user_profiles')
             .insert({
                 id: user.id,
-                role,
-                display_name: displayName,
+                role: resolvedRole,
+                display_name: resolvedDisplayName,
             })
 
-        if (!insertProfileError && role === 'planner') {
+        if (!insertProfileError && resolvedRole === 'planner') {
             await supabase
                 .from('planner_profiles')
                 .insert({
@@ -52,12 +92,22 @@ async function ensureUserProfile(
                 })
         }
 
-        return { role, displayName }
+        return {
+            role: resolvedRole,
+            displayName: resolvedDisplayName,
+        }
+    }
+
+    if (existingProfile.display_name !== resolvedDisplayName) {
+        await supabase
+            .from('user_profiles')
+            .update({ display_name: resolvedDisplayName })
+            .eq('id', user.id)
     }
 
     return {
-        role: existingProfile.role || role,
-        displayName: existingProfile.display_name || displayName,
+        role: resolvedRole,
+        displayName: resolvedDisplayName,
     }
 }
 
@@ -77,11 +127,11 @@ export async function getSession() {
         .maybeSingle()
 
     let role = 'planner'
-    let displayName = user.email || 'Planner'
+    let displayName = resolveDisplayName(user, null, role)
 
     if (vendorRecord) {
         role = 'vendor'
-        displayName = vendorRecord.company_name || user.email || 'Vendor'
+        displayName = normalizeDisplayName(vendorRecord.company_name) || getFallbackDisplayName(role)
     }
 
     const ensuredProfile = await ensureUserProfile(supabase, user, role, displayName)

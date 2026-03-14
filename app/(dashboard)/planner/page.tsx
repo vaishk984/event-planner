@@ -7,18 +7,38 @@ import {
 import Link from 'next/link'
 import { getDashboardData } from '@/actions/dashboard'
 
+function getGreeting() {
+    const hour = Number(
+        new Intl.DateTimeFormat('en-IN', {
+            hour: 'numeric',
+            hour12: false,
+            timeZone: 'Asia/Kolkata',
+        }).format(new Date())
+    )
+
+    if (hour < 12) {
+        return 'Good Morning'
+    }
+
+    if (hour < 17) {
+        return 'Good Afternoon'
+    }
+
+    return 'Good Evening'
+}
+
 export default async function PlannerDashboard() {
     const data = await getDashboardData()
     const { stats, todayEvents, leads, tasks, vendors, user } = data
+    const greeting = getGreeting()
 
     const hasUrgentItems = tasks.length > 0 || leads.some(l => l.priority === 'hot')
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Good Morning, {user.name}! 👋</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">{greeting}, {user.name}!</h1>
                     <p className="text-gray-500">{user.date}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -34,14 +54,10 @@ export default async function PlannerDashboard() {
                 </div>
             </div>
 
-            {/* Today's Focus Section */}
             <Card className="p-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    🎯 Today's Focus
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Today's Focus</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Today's Events */}
                     <Card className="p-4 bg-white">
                         <div className="flex items-center gap-2 text-indigo-600 mb-3">
                             <Calendar className="w-5 h-5" />
@@ -65,7 +81,6 @@ export default async function PlannerDashboard() {
                         </Link>
                     </Card>
 
-                    {/* Leads to Follow */}
                     <Card className="p-4 bg-white">
                         <div className="flex items-center gap-2 text-orange-600 mb-3">
                             <Phone className="w-5 h-5" />
@@ -78,8 +93,7 @@ export default async function PlannerDashboard() {
                             leads.slice(0, 2).map(lead => (
                                 <div key={lead.id} className="text-sm text-gray-600 flex items-center justify-between">
                                     <span className="truncate max-w-[100px]">{lead.name}</span>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${lead.priority === 'hot' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                                        }`}>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${lead.priority === 'hot' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
                                         {lead.priority}
                                     </span>
                                 </div>
@@ -92,7 +106,6 @@ export default async function PlannerDashboard() {
                         </Link>
                     </Card>
 
-                    {/* Tasks at Risk */}
                     <Card className="p-4 bg-white border-red-100">
                         <div className="flex items-center gap-2 text-red-600 mb-3">
                             <AlertTriangle className="w-5 h-5" />
@@ -116,7 +129,6 @@ export default async function PlannerDashboard() {
                         </Link>
                     </Card>
 
-                    {/* Vendor Confirmations */}
                     <Card className="p-4 bg-white">
                         <div className="flex items-center gap-2 text-purple-600 mb-3">
                             <Users className="w-5 h-5" />
@@ -142,7 +154,6 @@ export default async function PlannerDashboard() {
                 </div>
             </Card>
 
-            {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="p-6">
                     <div className="text-sm text-gray-500 mb-1">Active Events</div>
@@ -159,7 +170,7 @@ export default async function PlannerDashboard() {
                     <div className="text-3xl font-bold text-gray-900">
                         {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(stats.revenue)}
                     </div>
-                    <div className="text-xs text-green-600 mt-1">↑ 12% vs last month</div>
+                    <div className="text-xs text-green-600 mt-1">12% vs last month</div>
                 </Card>
                 <Card className="p-6">
                     <div className="text-sm text-gray-500 mb-1">Pending Payments</div>
@@ -170,7 +181,6 @@ export default async function PlannerDashboard() {
                 </Card>
             </div>
 
-            {/* Quick Actions */}
             <Card className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="flex flex-wrap gap-3">
@@ -196,12 +206,12 @@ export default async function PlannerDashboard() {
                     </Link>
                     <Link href="/planner/quotes">
                         <Button variant="outline" className="gap-2">
-                            📄 View Quotes
+                            View Quotes
                         </Button>
                     </Link>
                     <Link href="/planner/invoices">
                         <Button variant="outline" className="gap-2">
-                            💰 Invoices
+                            Invoices
                         </Button>
                     </Link>
                 </div>

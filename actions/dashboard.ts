@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getAuthenticatedUser } from '@/lib/session'
+import { getAuthenticatedUser, resolveDisplayName } from '@/lib/session'
 import { DashboardData, DashboardLead, DashboardTask, DashboardVendor, TodayEvent } from '@/types/dashboard'
 import { endOfDay, formatDistanceToNow, startOfDay } from 'date-fns'
 
@@ -61,7 +61,7 @@ export async function getDashboardData(): Promise<DashboardData> {
             .eq('id', user.id)
             .maybeSingle()
 
-        const displayName = profile?.display_name || user.email || 'Planner'
+        const displayName = resolveDisplayName(user, profile?.display_name, 'planner')
 
         if (profileError && process.env.NODE_ENV === 'development') {
             console.warn('Dashboard profile unavailable:', formatSupabaseError(profileError))
