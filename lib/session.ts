@@ -5,10 +5,14 @@ import { cache } from 'react'
 async function getAuthenticatedUserFromClient(
     supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<User | null> {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    const user = session?.user;
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (error || !user) {
+    if (error) {
+        console.error('[Session] getUser error:', error.message)
+    }
+
+    if (!user) {
+        console.error('[Session] No user returned from getUser')
         return null
     }
 
