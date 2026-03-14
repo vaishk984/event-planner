@@ -31,6 +31,21 @@ function createEmptyDashboardData(name = 'Planner'): DashboardData {
     }
 }
 
+function formatSupabaseError(error: unknown): string | null {
+    if (!error || typeof error !== 'object') {
+        return null
+    }
+
+    const maybeError = error as {
+        code?: string
+        message?: string
+        details?: string
+    }
+
+    const parts = [maybeError.code, maybeError.message, maybeError.details].filter(Boolean)
+    return parts.length > 0 ? parts.join(' | ') : 'Unknown Supabase error'
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
     try {
         const supabase = await createClient()
@@ -44,10 +59,12 @@ export async function getDashboardData(): Promise<DashboardData> {
             .from('user_profiles')
             .select('display_name')
             .eq('id', user.id)
-            .single()
+            .maybeSingle()
 
-        if (profileError) {
-            console.error('Error fetching dashboard profile:', profileError)
+        const displayName = profile?.display_name || user.email || 'Planner'
+
+        if (profileError && process.env.NODE_ENV === 'development') {
+            console.warn('Dashboard profile unavailable:', formatSupabaseError(profileError))
         }
 
         const [
@@ -102,18 +119,17 @@ export async function getDashboardData(): Promise<DashboardData> {
                 .limit(5),
         ])
 
-        const queryErrors = [
-            eventsResult.error,
-            leadsResult.error,
-            paymentsResult.error,
-            pendingPaymentsResult.error,
-            todayEventsResult.error,
-            recentLeadsResult.error,
-            urgentTasksResult.error,
-        ].filter(Boolean)
+        const criticalErrors = [
+            ['events', eventsResult.error],
+            ['leads', leadsResult.error],
+            ['recentLeads', recentLeadsResult.error],
+        ].flatMap(([label, error]) => {
+            const formatted = formatSupabaseError(error)
+            return formatted ? [`${label}: ${formatted}`] : []
+        })
 
-        if (queryErrors.length > 0) {
-            console.error('Dashboard query errors:', queryErrors)
+        if (criticalErrors.length > 0 && process.env.NODE_ENV === 'development') {
+            console.warn('Dashboard core data partially unavailable:', criticalErrors)
         }
 
         const revenue = paymentsResult.data?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
@@ -161,7 +177,7 @@ export async function getDashboardData(): Promise<DashboardData> {
             tasks,
             vendors,
             user: {
-                name: profile?.display_name || user.email || 'Planner',
+                name: displayName,
                 date: createEmptyDashboardData().user.date,
             },
         }
