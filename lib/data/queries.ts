@@ -1,4 +1,4 @@
-import { getSession } from '@/lib/session';
+import { getUserId } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
 import { Lead } from '@/actions/leads';
 import { Task } from '@/actions/tasks';
@@ -6,12 +6,13 @@ import { Task } from '@/actions/tasks';
 export async function getLeadsData(): Promise<{ data?: Lead[], error?: string }> {
     try {
         const supabase = await createClient();
-        const session = await getSession();
-        if (!session) return { error: 'Unauthorized' };
+        const plannerId = await getUserId();
+        if (!plannerId) return { error: 'Unauthorized' };
 
         const { data, error } = await supabase
             .from('clients')
             .select('*')
+            .eq('planner_id', plannerId)
             .eq('status', 'prospect')
             .order('score', { ascending: false })
             .order('created_at', { ascending: false });
@@ -30,10 +31,13 @@ export async function getLeadsData(): Promise<{ data?: Lead[], error?: string }>
 export async function getTasksData(filters?: { eventId?: string; status?: string; priority?: string; }) {
     try {
         const supabase = await createClient();
-        const session = await getSession();
-        if (!session) return { error: 'Unauthorized' };
+        const plannerId = await getUserId();
+        if (!plannerId) return { error: 'Unauthorized' };
 
-        let query = supabase.from('tasks').select('*, events(name), vendors(company_name)');
+        let query = supabase
+            .from('tasks')
+            .select('*, events(name), vendors(company_name)')
+            .eq('planner_id', plannerId);
 
         if (filters?.eventId) {
             query = query.eq('event_id', filters.eventId);

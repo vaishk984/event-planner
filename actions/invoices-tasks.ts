@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
+import { getUserId } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
 
 // ============================================================================
@@ -8,13 +9,13 @@ import { revalidatePath } from 'next/cache'
 
 export async function getInvoices() {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized', data: [] }
+    const userId = await getUserId()
+    if (!userId) return { error: 'Unauthorized', data: [] }
 
     const { data, error } = await supabase
         .from('invoices')
         .select('*, events(name)')
+        .eq('planner_id', userId)
         .order('created_at', { ascending: false })
 
     if (error) {
@@ -23,6 +24,7 @@ export async function getInvoices() {
         const { data: fallback } = await supabase
             .from('invoices')
             .select('*')
+            .eq('planner_id', userId)
             .order('created_at', { ascending: false })
         return { data: fallback || [] }
     }
@@ -32,10 +34,16 @@ export async function getInvoices() {
 
 export async function getInvoicesByEvent(eventId: string) {
     const supabase = await createClient()
+    const userId = await getUserId()
+
+    if (!userId) {
+        return { error: 'Unauthorized', data: [] }
+    }
 
     const { data, error } = await supabase
         .from('invoices')
         .select('*, invoice_items(*)')
+        .eq('planner_id', userId)
         .eq('event_id', eventId)
         .order('created_at', { ascending: false })
 
@@ -57,9 +65,8 @@ export async function createInvoice(formData: {
     notes?: string
 }) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    const userId = await getUserId()
+    if (!userId) return { error: 'Unauthorized' }
 
     // Generate invoice number
     const { count } = await supabase
@@ -78,7 +85,7 @@ export async function createInvoice(formData: {
         .from('invoices')
         .insert({
             event_id: formData.eventId,
-            planner_id: user.id,
+            planner_id: userId,
             invoice_number: invoiceNumber,
             client_name: formData.clientName,
             client_email: formData.clientEmail || '',
@@ -116,12 +123,22 @@ export async function createInvoice(formData: {
 
 export async function updateInvoiceStatus(invoiceId: string, status: string) {
     const supabase = await createClient()
+    const userId = await getUserId()
+
+    if (!userId) {
+        return { error: 'Unauthorized' }
+    }
 
     const updateData: any = { status, updated_at: new Date().toISOString() }
     if (status === 'paid') {
         updateData.paid_at = new Date().toISOString()
         // Get invoice total to set paid_amount
-        const { data: inv } = await supabase.from('invoices').select('total').eq('id', invoiceId).single()
+        const { data: inv } = await supabase
+            .from('invoices')
+            .select('total')
+            .eq('id', invoiceId)
+            .eq('planner_id', userId)
+            .single()
         if (inv) updateData.paid_amount = inv.total
     }
 
@@ -129,6 +146,7 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
         .from('invoices')
         .update(updateData)
         .eq('id', invoiceId)
+        .eq('planner_id', userId)
 
     if (error) {
         console.error('Error updating invoice:', error)
@@ -145,13 +163,13 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
 
 export async function getTasks() {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized', data: [] }
+    const userId = await getUserId()
+    if (!userId) return { error: 'Unauthorized', data: [] }
 
     const { data, error } = await supabase
         .from('tasks')
         .select('*, events(name)')
+        .eq('planner_id', userId)
         .order('created_at', { ascending: false })
 
     if (error) {
@@ -159,6 +177,7 @@ export async function getTasks() {
         const { data: fallback } = await supabase
             .from('tasks')
             .select('*')
+            .eq('planner_id', userId)
             .order('created_at', { ascending: false })
         return { data: fallback || [] }
     }
@@ -168,10 +187,16 @@ export async function getTasks() {
 
 export async function getTasksByEvent(eventId: string) {
     const supabase = await createClient()
+    const userId = await getUserId()
+
+    if (!userId) {
+        return { error: 'Unauthorized', data: [] }
+    }
 
     const { data, error } = await supabase
         .from('tasks')
         .select('*')
+        .eq('planner_id', userId)
         .eq('event_id', eventId)
         .order('due_date', { ascending: true })
 
@@ -193,15 +218,14 @@ export async function createTask(formData: {
     category?: string
 }) {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return { error: 'Unauthorized' }
+    const userId = await getUserId()
+    if (!userId) return { error: 'Unauthorized' }
 
     const { data, error } = await supabase
         .from('tasks')
         .insert({
             event_id: formData.eventId || null,
-            planner_id: user.id,
+            planner_id: userId,
             title: formData.title,
             description: formData.description || '',
             priority: formData.priority || 'medium',
@@ -223,11 +247,17 @@ export async function createTask(formData: {
 
 export async function updateTaskStatus(taskId: string, status: string) {
     const supabase = await createClient()
+    const userId = await getUserId()
+
+    if (!userId) {
+        return { error: 'Unauthorized' }
+    }
 
     const { error } = await supabase
         .from('tasks')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', taskId)
+        .eq('planner_id', userId)
 
     if (error) {
         console.error('Error updating task:', error)
@@ -240,11 +270,17 @@ export async function updateTaskStatus(taskId: string, status: string) {
 
 export async function deleteTask(taskId: string) {
     const supabase = await createClient()
+    const userId = await getUserId()
+
+    if (!userId) {
+        return { error: 'Unauthorized' }
+    }
 
     const { error } = await supabase
         .from('tasks')
         .delete()
         .eq('id', taskId)
+        .eq('planner_id', userId)
 
     if (error) {
         console.error('Error deleting task:', error)

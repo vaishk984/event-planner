@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/session'
 
 /**
  * Login with email and password
@@ -155,8 +156,14 @@ export async function logout() {
  */
 export async function getSession() {
     const supabase = await createClient()
+    const user = await getAuthenticatedUser()
+
+    if (!user) {
+        return null
+    }
+
     const { data: { session } } = await supabase.auth.getSession()
-    return session
+    return session || ({ user } as unknown as NonNullable<typeof session>)
 }
 
 /**
@@ -164,9 +171,7 @@ export async function getSession() {
  */
 export async function getCurrentUser() {
     const supabase = await createClient()
-
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getAuthenticatedUser()
 
     if (!user) return null
 
@@ -187,9 +192,7 @@ export async function getCurrentUser() {
  */
 export async function getPlannerProfile() {
     const supabase = await createClient()
-
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getAuthenticatedUser()
 
     if (!user) return null
 
@@ -207,9 +210,7 @@ export async function getPlannerProfile() {
  */
 export async function updateProfile(formData: FormData) {
     const supabase = await createClient()
-
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getAuthenticatedUser()
 
     if (!user) {
         return { error: 'Not authenticated' }
@@ -240,9 +241,7 @@ export async function updateProfile(formData: FormData) {
  */
 export async function updatePlannerProfile(formData: FormData) {
     const supabase = await createClient()
-
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getAuthenticatedUser()
 
     if (!user) {
         return { error: 'Not authenticated' }

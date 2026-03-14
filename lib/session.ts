@@ -1,24 +1,38 @@
+import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
-export async function getSession() {
-    const supabase = await createClient()
+async function getAuthenticatedUserFromClient(
+    supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<User | null> {
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-    const { data: { session }, error } = await supabase.auth.getSession()
-
-    if (error || !session?.user) {
+    if (error || !user) {
         return null
     }
 
-    const { user } = session
+    return user
+}
 
-    // Check if user has a vendor record — use maybeSingle() so planners (no vendor row) return null cleanly
+export async function getAuthenticatedUser() {
+    const supabase = await createClient()
+    return getAuthenticatedUserFromClient(supabase)
+}
+
+export async function getSession() {
+    const supabase = await createClient()
+    const user = await getAuthenticatedUserFromClient(supabase)
+
+    if (!user) {
+        return null
+    }
+
+    // Check if user has a vendor record so dashboards can choose the correct shell.
     const { data: vendorRecord } = await supabase
         .from('vendors')
         .select('id, company_name')
         .eq('user_id', user.id)
         .maybeSingle()
 
-    // Determine role: vendor if has vendor record, otherwise planner
     let role = 'planner'
     let displayName = user.email
 
@@ -30,8 +44,8 @@ export async function getSession() {
     return {
         userId: user.id,
         email: user.email,
-        role: role,
-        displayName: displayName,
+        role,
+        displayName,
     }
 }
 
