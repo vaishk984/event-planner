@@ -1,13 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { cache } from 'react'
-
-// CRITICAL: cache() ensures a single Supabase client per server request.
-// Without this, each Server Component creates a separate client. When one
-// client's getUser() refreshes the auth token, setAll() silently fails in
-// Server Components, so subsequent clients read stale cookies and fail.
-// By sharing ONE cached client, all components reuse the same validated token.
-export const createClient = cache(async () => {
+// The standard Supabase SSR implementation deliberately does not cache this
+// factory function to ensure that each call dynamically retrieves the context's cookies.
+// The deduplication of user fetching is properly handled in lib/session.ts instead.
+export async function createClient() {
     const cookieStore = await cookies()
 
     return createServerClient(
@@ -32,7 +28,7 @@ export const createClient = cache(async () => {
             },
         }
     )
-})
+}
 
 /**
  * Get current user session

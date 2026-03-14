@@ -30,12 +30,10 @@ export default async function proxy(request: NextRequest) {
     )
 
     // IMPORTANT: Avoid writing any logic between createServerClient and
-    // supabase.auth.getSession(). A simple mistake could make it very hard to 
+    // supabase.auth.getUser(). A simple mistake could make it very hard to 
     // debug issues with users being randomly logged out.
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
 
-    // We only call getSession/getUser to ensure the Supabase SSR client
+    // We only call getUser to ensure the Supabase SSR client
     // has an opportunity to refresh the authentication tokens. 
     // We explicitly DO NOT handle routing/redirects here because Next.js
     // Server Actions (POST requests) frequently fail Edge cookie parsing,
