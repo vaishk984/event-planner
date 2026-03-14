@@ -114,6 +114,31 @@ node demo-workflow.js
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
+### CI/CD Workflows
+
+This repository now includes GitHub Actions workflows for CI and Vercel deployments:
+
+| Workflow | File | Trigger |
+|----------|------|---------|
+| CI | `.github/workflows/ci.yml` | Push/PR on `main`, `develop`, `staging` |
+| Staging Deploy | `.github/workflows/deploy-staging.yml` | Push to `develop` or `staging`, or manual dispatch |
+| Production Deploy | `.github/workflows/deploy-production.yml` | Push to `main`, or manual dispatch |
+
+### Required GitHub Secrets
+
+Add these repository secrets before using the deploy workflows:
+
+| Secret | Description |
+|--------|-------------|
+| `VERCEL_TOKEN` | Personal or team Vercel API token |
+| `VERCEL_ORG_ID` | Vercel team or org ID |
+| `VERCEL_PROJECT_ID` | Vercel project ID |
+
+Notes:
+- CI uses placeholder env values and does not require production Supabase secrets.
+- `lint` is currently non-blocking in CI because the repository still has a large ESLint backlog.
+- Production deploys use the Vercel production environment; staging deploys use the Vercel preview environment.
+
 ## 💰 Cost
 
 This project runs entirely on **free tiers**:

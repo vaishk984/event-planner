@@ -2,14 +2,32 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
+      - staging
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - develop
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint-and-build:
-    name: Lint, Type Check & Build
+  lint-typecheck-build:
+    name: Lint, Type Check, Build
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_APP_URL: https://example.com
 
     steps:
       - name: Checkout code
@@ -25,16 +43,11 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npx next lint || true
-        # Allow lint to pass even with warnings for now
+        continue-on-error: true
+        run: npm run lint
 
       - name: Type check
-        run: npx tsc --noEmit || true
-        # Allow type-check to pass; pre-existing errors to be fixed incrementally
+        run: npx tsc --noEmit
 
       - name: Build
-        run: npx next build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL: https://your-app.vercel.app
+        run: npm run build

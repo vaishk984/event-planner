@@ -1,140 +1,172 @@
-'use server'
-import { getSession } from '@/lib/session'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/session'
 import { DashboardData, DashboardLead, DashboardTask, DashboardVendor, TodayEvent } from '@/types/dashboard'
-import { startOfDay, endOfDay, formatDistanceToNow } from 'date-fns'
+import { endOfDay, formatDistanceToNow, startOfDay } from 'date-fns'
 
-export async function getDashboardData(): Promise<DashboardData> {
-    const supabase = await createClient()
-
-    // 1. Get User Info
-    const session = await getSession();
-    const user = session ? { id: session.userId } as any : null;
-    if (!user) throw new Error('Not authenticated')
-
-    const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .single()
-
-    // 2. Fetch Stats (Parallel Queries)
-    const [
-        eventsResult,
-        leadsResult,
-        paymentsResult,
-        pendingPaymentsResult,
-        todayEventsResult,
-        recentLeadsResult,
-        urgentTasksResult
-    ] = await Promise.all([
-        // Active Events Count
-        supabase.from('events')
-            .select('id', { count: 'exact' })
-            .eq('planner_id', user.id)
-            .neq('status', 'completed'),
-
-        // Open Leads Count
-        supabase.from('clients')
-            .select('id', { count: 'exact' })
-            .eq('planner_id', user.id)
-            .eq('status', 'prospect'),
-
-        // Revenue (Confirmed payments this month)
-        supabase.from('financial_payments')
-            .select('amount, events!inner(planner_id)')
-            .eq('events.planner_id', user.id)
-            .eq('status', 'completed')
-            .eq('type', 'client_payment'),
-
-        // Pending Payments (Invoices sent but not paid)
-        supabase.from('financial_payments')
-            .select('amount, events!inner(planner_id)')
-            .eq('events.planner_id', user.id)
-            .eq('status', 'pending')
-            .eq('type', 'client_payment'),
-
-        // Today's Events
-        supabase.from('event_functions')
-            .select('id, name, start_time, type, events!inner(planner_id)')
-            .eq('events.planner_id', user.id)
-            .gte('date', startOfDay(new Date()).toISOString())
-            .lte('date', endOfDay(new Date()).toISOString()),
-
-        // Recent Leads
-        supabase.from('clients')
-            .select('*')
-            .eq('planner_id', user.id)
-            .eq('status', 'prospect')
-            .order('created_at', { ascending: false })
-            .limit(5),
-
-        // Tasks at Risk (Overdue or due soon)
-        supabase.from('tasks')
-            .select('id, title, due_date, events!inner(name, planner_id)')
-            .eq('events.planner_id', user.id)
-            .neq('status', 'completed')
-            .lt('due_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()) // Due within 24h or overdue
-            .limit(5)
-    ])
-
-    // Calculate Totals
-    const revenue = paymentsResult.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
-    const pendingRevenue = pendingPaymentsResult.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
-
-    // Transform Events
-    const todayEvents: TodayEvent[] = (todayEventsResult.data || []).map(e => ({
-        id: e.id,
-        name: e.name,
-        time: e.start_time || 'All Day',
-        status: 'today'
-    }))
-
-    // Transform Leads
-    const leads: DashboardLead[] = (recentLeadsResult.data || []).map(l => ({
-        id: l.id,
-        name: l.name,
-        event: l.event_type || 'General Usage',
-        lastContact: l.updated_at ? formatDistanceToNow(new Date(l.updated_at)) + ' ago' : 'New',
-        priority: (l.score || 0) > 70 ? 'hot' : (l.score || 0) > 40 ? 'warm' : 'cold',
-        score: l.score || 0
-    }))
-
-    // Transform Tasks
-    const tasks: DashboardTask[] = (urgentTasksResult.data || []).map(t => ({
-        id: t.id,
-        task: t.title,
-        event: (t.events as any)?.name || 'Unknown Event',
-        dueDate: t.due_date,
-        dueIn: t.due_date ? formatDistanceToNow(new Date(t.due_date), { addSuffix: true }) : 'ASAP'
-    }))
-
-    // Vendors (Mock for now until logic defined)
-    const vendors: DashboardVendor[] = []
-
+function createEmptyDashboardData(name = 'Planner'): DashboardData {
     return {
         stats: {
-            activeEvents: eventsResult.count || 0,
-            activeEventsChange: 3, // Logic for historical diff required later
-            openLeads: leadsResult.count || 0,
-            openLeadsChange: 5,
-            revenue: revenue,
-            revenueChange: 12,
-            pendingPayments: pendingRevenue,
-            overduePayments: 0
+            activeEvents: 0,
+            activeEventsChange: 0,
+            openLeads: 0,
+            openLeadsChange: 0,
+            revenue: 0,
+            revenueChange: 0,
+            pendingPayments: 0,
+            overduePayments: 0,
         },
-        todayEvents,
-        leads,
-        tasks,
-        vendors,
+        todayEvents: [],
+        leads: [],
+        tasks: [],
+        vendors: [],
         user: {
-            name: profile?.display_name || 'Planner',
+            name,
             date: new Date().toLocaleDateString('en-IN', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
-                year: 'numeric'
-            })
+                year: 'numeric',
+            }),
+        },
+    }
+}
+
+export async function getDashboardData(): Promise<DashboardData> {
+    try {
+        const supabase = await createClient()
+        const user = await getAuthenticatedUser()
+
+        if (!user) {
+            return createEmptyDashboardData()
         }
+
+        const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('display_name')
+            .eq('id', user.id)
+            .single()
+
+        if (profileError) {
+            console.error('Error fetching dashboard profile:', profileError)
+        }
+
+        const [
+            eventsResult,
+            leadsResult,
+            paymentsResult,
+            pendingPaymentsResult,
+            todayEventsResult,
+            recentLeadsResult,
+            urgentTasksResult,
+        ] = await Promise.all([
+            supabase.from('events')
+                .select('id', { count: 'exact' })
+                .eq('planner_id', user.id)
+                .neq('status', 'completed'),
+
+            supabase.from('clients')
+                .select('id', { count: 'exact' })
+                .eq('planner_id', user.id)
+                .eq('status', 'prospect'),
+
+            supabase.from('financial_payments')
+                .select('amount, events!inner(planner_id)')
+                .eq('events.planner_id', user.id)
+                .eq('status', 'completed')
+                .eq('type', 'client_payment'),
+
+            supabase.from('financial_payments')
+                .select('amount, events!inner(planner_id)')
+                .eq('events.planner_id', user.id)
+                .eq('status', 'pending')
+                .eq('type', 'client_payment'),
+
+            supabase.from('event_functions')
+                .select('id, name, start_time, type, events!inner(planner_id)')
+                .eq('events.planner_id', user.id)
+                .gte('date', startOfDay(new Date()).toISOString())
+                .lte('date', endOfDay(new Date()).toISOString()),
+
+            supabase.from('clients')
+                .select('*')
+                .eq('planner_id', user.id)
+                .eq('status', 'prospect')
+                .order('created_at', { ascending: false })
+                .limit(5),
+
+            supabase.from('tasks')
+                .select('id, title, due_date, events!inner(name, planner_id)')
+                .eq('events.planner_id', user.id)
+                .neq('status', 'completed')
+                .lt('due_date', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+                .limit(5),
+        ])
+
+        const queryErrors = [
+            eventsResult.error,
+            leadsResult.error,
+            paymentsResult.error,
+            pendingPaymentsResult.error,
+            todayEventsResult.error,
+            recentLeadsResult.error,
+            urgentTasksResult.error,
+        ].filter(Boolean)
+
+        if (queryErrors.length > 0) {
+            console.error('Dashboard query errors:', queryErrors)
+        }
+
+        const revenue = paymentsResult.data?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+        const pendingRevenue = pendingPaymentsResult.data?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+
+        const todayEvents: TodayEvent[] = (todayEventsResult.data || []).map(event => ({
+            id: event.id,
+            name: event.name,
+            time: event.start_time || 'All Day',
+            status: 'today',
+        }))
+
+        const leads: DashboardLead[] = (recentLeadsResult.data || []).map(lead => ({
+            id: lead.id,
+            name: lead.name,
+            event: lead.event_type || 'General Usage',
+            lastContact: lead.updated_at ? `${formatDistanceToNow(new Date(lead.updated_at))} ago` : 'New',
+            priority: (lead.score || 0) > 70 ? 'hot' : (lead.score || 0) > 40 ? 'warm' : 'cold',
+            score: lead.score || 0,
+        }))
+
+        const tasks: DashboardTask[] = (urgentTasksResult.data || []).map(task => ({
+            id: task.id,
+            task: task.title,
+            event: (task.events as { name?: string } | null)?.name || 'Unknown Event',
+            dueDate: task.due_date,
+            dueIn: task.due_date ? formatDistanceToNow(new Date(task.due_date), { addSuffix: true }) : 'ASAP',
+        }))
+
+        const vendors: DashboardVendor[] = []
+
+        return {
+            stats: {
+                activeEvents: eventsResult.count || 0,
+                activeEventsChange: 3,
+                openLeads: leadsResult.count || 0,
+                openLeadsChange: 5,
+                revenue,
+                revenueChange: 12,
+                pendingPayments: pendingRevenue,
+                overduePayments: 0,
+            },
+            todayEvents,
+            leads,
+            tasks,
+            vendors,
+            user: {
+                name: profile?.display_name || user.email || 'Planner',
+                date: createEmptyDashboardData().user.date,
+            },
+        }
+    } catch (error) {
+        console.error('Unexpected dashboard load error:', error)
+        return createEmptyDashboardData()
     }
 }
