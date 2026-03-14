@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { cache } from 'react'
 
 async function getAuthenticatedUserFromClient(
     supabase: Awaited<ReturnType<typeof createClient>>
@@ -13,10 +14,10 @@ async function getAuthenticatedUserFromClient(
     return user
 }
 
-export async function getAuthenticatedUser() {
+export const getAuthenticatedUser = cache(async () => {
     const supabase = await createClient()
     return getAuthenticatedUserFromClient(supabase)
-}
+})
 
 export function normalizeDisplayName(value?: string | null): string | null {
     const trimmed = value?.trim()
@@ -111,7 +112,11 @@ async function ensureUserProfile(
     }
 }
 
-export async function getSession() {
+// CRITICAL: cache() deduplicates this function within a single server request.
+// Without it, layout calls getSession() -> getUser() which may rotate the refresh
+// token, and then the page component calls getSession() again with stale cookies,
+// causing the second getUser() to fail on Vercel's serverless runtime.
+export const getSession = cache(async () => {
     const supabase = await createClient()
     const user = await getAuthenticatedUserFromClient(supabase)
 
@@ -144,7 +149,7 @@ export async function getSession() {
         role,
         displayName,
     }
-}
+})
 
 export async function getUserId() {
     const session = await getSession()
