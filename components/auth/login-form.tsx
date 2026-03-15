@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { login } from '@/actions/auth/login'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,19 +10,39 @@ import { Label } from '@/components/ui/label'
 export function LoginForm() {
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+    const router = useRouter()
 
-    async function handleSubmit(formData: FormData) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
         setLoading(true)
         setError(null)
 
-        try {
-            const result = await login(formData)
+        const formData = new FormData(e.currentTarget)
 
-            if (result?.error) {
-                setError(result.error)
-                setLoading(false)
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (response.redirected) {
+                // Follow the redirect – this preserves the Set-Cookie headers
+                window.location.href = response.url
+                return
             }
-            // If no error, the action will redirect
+
+            if (!response.ok) {
+                const data = await response.json()
+                setError(data.error || 'Login failed. Please try again.')
+                setLoading(false)
+                return
+            }
+
+            // Handle redirect from JSON (fallback)
+            const data = await response.json()
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl
+            }
         } catch (err) {
             setError('An unexpected error occurred. Please try again.')
             setLoading(false)
@@ -30,7 +50,7 @@ export function LoginForm() {
     }
 
     return (
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -75,8 +95,6 @@ export function LoginForm() {
                     Create account
                 </Link>
             </div>
-
-
         </form>
     )
 }

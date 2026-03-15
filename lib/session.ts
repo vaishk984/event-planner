@@ -2,28 +2,25 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { cache } from 'react'
 
-import { cookies } from 'next/headers'
-
 async function getAuthenticatedUserFromClient(
     supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<User | null> {
-    const cookieStore = await cookies()
-    const allCookies = cookieStore.getAll()
-    console.log('[Session] Received cookies array size:', allCookies.length)
-    console.log('[Session] Cookie names:', allCookies.map(c => c.name).join(', '))
+    const { data: { session } } = await supabase.auth.getSession()
 
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error) {
-        console.error('[Session] getUser error:', error.message)
-    }
-
-    if (!user) {
-        console.error('[Session] No user returned from getUser')
+    if (!session) {
         return null
     }
 
-    return user
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error) {
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('[Session] getUser error:', error.message)
+        }
+        return null
+    }
+
+    return user || null
 }
 
 export const getAuthenticatedUser = cache(async () => {
