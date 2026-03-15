@@ -2,9 +2,6 @@ import "./globals.css"
 import { QuoteProvider } from "@/components/providers/quote-provider"
 import { EventProvider } from "@/components/providers/event-provider"
 import { Toaster } from "@/components/ui/toaster"
-import { getSession } from "@/lib/session"
-
-
 
 export const viewport = {
   width: 'device-width',
@@ -22,18 +19,14 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getSession()
-  const userId = session?.userId ?? null
-
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <EventProvider userId={userId}>
-          <QuoteProvider userId={userId}>
+        <EventProvider userId={null}>
+          <QuoteProvider userId={null}>
             {children}
             <Toaster />
           </QuoteProvider>
-
         </EventProvider>
       </body>
     </html>

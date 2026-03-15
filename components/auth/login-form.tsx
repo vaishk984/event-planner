@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label'
 export function LoginForm() {
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
-    const router = useRouter()
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -18,31 +17,47 @@ export function LoginForm() {
         setError(null)
 
         const formData = new FormData(e.currentTarget)
+        const email = formData.get('email') as string
+        const password = formData.get('password') as string
 
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                body: formData,
+            // Use createBrowserClient so Supabase manages cookies natively in the browser.
+            // This is the recommended approach for client-side login — the browser Supabase
+            // client automatically stores auth tokens as cookies (not localStorage), making
+            // them available to Server Components on subsequent requests.
+            const supabase = createBrowserClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+            )
+
+            const { data, error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
             })
 
-            if (response.redirected) {
-                // Follow the redirect – this preserves the Set-Cookie headers
-                window.location.href = response.url
-                return
-            }
-
-            if (!response.ok) {
-                const data = await response.json()
-                setError(data.error || 'Login failed. Please try again.')
+            if (signInError) {
+                setError(signInError.message)
                 setLoading(false)
                 return
             }
 
-            // Handle redirect from JSON (fallback)
-            const data = await response.json()
-            if (data.redirectUrl) {
-                window.location.href = data.redirectUrl
+            if (!data.user) {
+                setError('Login failed. Please try again.')
+                setLoading(false)
+                return
             }
+
+            // Determine role by checking vendor record
+            const { data: vendorRecord } = await supabase
+                .from('vendors')
+                .select('id')
+                .eq('user_id', data.user.id)
+                .maybeSingle()
+
+            const role = vendorRecord ? 'vendor' : 'planner'
+
+            // Use a full page reload so Next.js Server Components see the fresh cookies
+            window.location.href = `/${role}`
         } catch (err) {
             setError('An unexpected error occurred. Please try again.')
             setLoading(false)
