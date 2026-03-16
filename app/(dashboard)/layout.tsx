@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
+import { runWithRequestStore } from '@/lib/request-store'
 import { DashboardWrapper } from '@/components/layout/dashboard-wrapper'
 
 export default async function DashboardLayout({
@@ -14,9 +15,9 @@ export default async function DashboardLayout({
         redirect('/login')
     }
 
-    return (
-        <DashboardWrapper userEmail={session.displayName || session.email} userRole={session.role}>
+    return runWithRequestStore(session.userId, session.role, () => (
+        <DashboardWrapper userEmail={session.displayName || session.email} userRole={session.role} userId={session.userId}>
             {children}
         </DashboardWrapper>
-    )
+    ))
 }

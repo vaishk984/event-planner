@@ -11,6 +11,7 @@ interface DashboardWrapperProps {
     children: React.ReactNode
     userEmail?: string
     userRole?: string
+    userId?: string
 }
 
 const PLANNER_NAV = [
@@ -30,7 +31,7 @@ const VENDOR_NAV = [
     { icon: Package, label: 'My Services', href: '/vendor/services' },
 ]
 
-export function DashboardWrapper({ children, userEmail = 'planner@example.com', userRole = 'planner' }: DashboardWrapperProps) {
+export function DashboardWrapper({ children, userEmail = 'planner@example.com', userRole = 'planner', userId }: DashboardWrapperProps) {
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const pathname = usePathname()

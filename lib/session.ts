@@ -2,25 +2,32 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { cache } from 'react'
 
+import { cookies } from 'next/headers'
+
 async function getAuthenticatedUserFromClient(
     supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<User | null> {
-    const { data: { session } } = await supabase.auth.getSession()
+    const cookieStore = await cookies()
+    const allCookies = cookieStore.getAll()
+    const supabaseCookies = allCookies.filter(c => c.name.startsWith('sb-'))
 
-    if (!session) {
-        return null
-    }
+    console.log('[Session] Total cookies:', allCookies.length, '| Supabase cookies:', supabaseCookies.length)
 
-    const { data: { user }, error } = await supabase.auth.getUser()
+    // getSession reads from cookies without a network call.
+    // This avoids false "Auth session missing" from getUser() on Vercel.
+    const { data: { session }, error } = await supabase.auth.getSession()
 
     if (error) {
-        if (process.env.NODE_ENV === 'development') {
-            console.warn('[Session] getUser error:', error.message)
-        }
+        console.error('[Session] getSession error:', error.message)
         return null
     }
 
-    return user || null
+    if (!session?.user) {
+        console.error('[Session] No session in cookies. Supabase cookie names:', supabaseCookies.map(c => c.name).join(', ') || 'NONE')
+        return null
+    }
+
+    return session.user
 }
 
 export const getAuthenticatedUser = cache(async () => {

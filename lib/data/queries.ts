@@ -1,3 +1,4 @@
+import { getRequestUserId } from '@/lib/request-store';
 import { getUserId } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
 import { Lead } from '@/actions/leads';
@@ -22,7 +23,8 @@ function formatSupabaseError(error: unknown): string {
 export async function getLeadsData(): Promise<{ data?: Lead[], error?: string }> {
     try {
         const supabase = await createClient();
-        const plannerId = await getUserId();
+        // Try the request store first (set by layout), fall back to getUserId()
+        const plannerId = getRequestUserId() || await getUserId();
         if (!plannerId) return { error: 'Unauthorized' };
 
         const { data, error } = await supabase
@@ -47,7 +49,8 @@ export async function getLeadsData(): Promise<{ data?: Lead[], error?: string }>
 export async function getTasksData(filters?: { eventId?: string; status?: string; priority?: string; }) {
     try {
         const supabase = await createClient();
-        const plannerId = await getUserId();
+        // Try the request store first (set by layout), fall back to getUserId()
+        const plannerId = getRequestUserId() || await getUserId();
         if (!plannerId) return { error: 'Unauthorized' };
 
         let query = supabase
