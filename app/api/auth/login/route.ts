@@ -65,11 +65,10 @@ export async function POST(request: NextRequest) {
         role = profile.role
     }
 
-    // Create redirect response
-    const redirectUrl = new URL(`/${role}`, request.url)
-    const response = NextResponse.redirect(redirectUrl)
+    // Create JSON response instead of a redirect to prevent edge networks dropping Set-Cookie
+    const response = NextResponse.json({ success: true, redirectUrl: `/${role}` })
 
-    // Explicitly set all Supabase auth cookies on the redirect response
+    // Explicitly set all Supabase auth cookies on the OK response
     cookiesToSet.forEach(({ name, value, options }) => {
         response.cookies.set(name, value, {
             ...options,

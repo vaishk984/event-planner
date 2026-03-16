@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,47 +16,29 @@ export function LoginForm() {
         setError(null)
 
         const formData = new FormData(e.currentTarget)
-        const email = formData.get('email') as string
-        const password = formData.get('password') as string
 
         try {
-            // Use createBrowserClient so Supabase manages cookies natively in the browser.
-            // This is the recommended approach for client-side login — the browser Supabase
-            // client automatically stores auth tokens as cookies (not localStorage), making
-            // them available to Server Components on subsequent requests.
-            const supabase = createBrowserClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            )
-
-            const { data, error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+            // Call our dedicated server API route.
+            // This guarantees the server fully controls HTTP Set-Cookie headers.
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                body: formData,
             })
 
-            if (signInError) {
-                setError(signInError.message)
+            const data = await response.json()
+
+            if (!response.ok) {
+                setError(data.error || 'Login failed. Please try again.')
                 setLoading(false)
                 return
             }
 
-            if (!data.user) {
-                setError('Login failed. Please try again.')
-                setLoading(false)
-                return
+            if (data.redirectUrl) {
+                // The API returned HTTP 200 OK along with Set-Cookie headers.
+                // The browser has now safely persisted the HttpOnly Supabase cookies.
+                // We securely perform a full page navigation so Server Components load correctly.
+                window.location.href = data.redirectUrl
             }
-
-            // Determine role by checking vendor record
-            const { data: vendorRecord } = await supabase
-                .from('vendors')
-                .select('id')
-                .eq('user_id', data.user.id)
-                .maybeSingle()
-
-            const role = vendorRecord ? 'vendor' : 'planner'
-
-            // Use a full page reload so Next.js Server Components see the fresh cookies
-            window.location.href = `/${role}`
         } catch (err) {
             setError('An unexpected error occurred. Please try again.')
             setLoading(false)
