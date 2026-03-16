@@ -65,11 +65,13 @@ export async function POST(request: NextRequest) {
         role = profile.role
     }
 
-    // Create JSON response instead of a redirect to prevent edge networks dropping Set-Cookie
     const response = NextResponse.json({ success: true, redirectUrl: `/${role}` })
+
+    console.log('[Login API] Attempting to set', cookiesToSet.length, 'cookies from Supabase.')
 
     // Explicitly set all Supabase auth cookies on the OK response
     cookiesToSet.forEach(({ name, value, options }) => {
+        console.log(`[Login API] Setting cookie: ${name}`)
         response.cookies.set(name, value, {
             ...options,
             // Ensure cookies work on Vercel's HTTPS domain

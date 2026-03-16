@@ -23,7 +23,7 @@ async function getAuthenticatedUserFromClient(
     }
 
     if (!session?.user) {
-        console.error('[Session] No session in cookies. Supabase cookie names:', supabaseCookies.map(c => c.name).join(', ') || 'NONE')
+        console.error('[Session] No session. Browser sent these cookies:', allCookies.map(c => c.name).join(', ') || 'NONE')
         return null
     }
 
