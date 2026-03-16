@@ -2,10 +2,54 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+
+/**
+ * Manually chunk and write the Supabase session to document.cookie.
+ * This bypasses @supabase/ssr's createBrowserClient cookie storage
+ * which appears to silently fail on Vercel deployments.
+ */
+function writeSessionToCookies(supabaseUrl: string, session: { access_token: string; refresh_token: string }) {
+    // Extract project ref from URL (e.g., "https://abcdef.supabase.co" → "abcdef")
+    const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
+    const cookieName = `sb-${projectRef}-auth-token`
+
+    // The session value is a JSON-encoded array: [access_token, refresh_token]
+    // This is the format @supabase/ssr expects
+    const sessionValue = JSON.stringify([session.access_token, session.refresh_token])
+
+    // Supabase SSR chunks cookies at 3180 bytes to stay under browser limits
+    const CHUNK_SIZE = 3180
+    const chunks: string[] = []
+    for (let i = 0; i < sessionValue.length; i += CHUNK_SIZE) {
+        chunks.push(sessionValue.substring(i, i + CHUNK_SIZE))
+    }
+
+    // Clear any old chunks first
+    for (let i = 0; i < 10; i++) {
+        document.cookie = `${cookieName}.${i}=; path=/; max-age=0`
+    }
+    document.cookie = `${cookieName}=; path=/; max-age=0`
+
+    const maxAge = 100 * 365 * 24 * 60 * 60 // 100 years (Supabase default)
+    const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+
+    if (chunks.length === 1) {
+        // Single cookie, no chunking needed
+        document.cookie = `${cookieName}=${encodeURIComponent(chunks[0])}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`
+    } else {
+        // Chunked cookies
+        chunks.forEach((chunk, i) => {
+            document.cookie = `${cookieName}.${i}=${encodeURIComponent(chunk)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`
+        })
+    }
+
+    console.log(`[LoginForm] Manually wrote ${chunks.length} cookie chunk(s) for ${cookieName}`)
+    console.log(`[LoginForm] document.cookie after write:`, document.cookie.substring(0, 300))
+}
 
 export function LoginForm() {
     const [error, setError] = useState<string | null>(null)
@@ -20,11 +64,20 @@ export function LoginForm() {
         const email = formData.get('email') as string
         const password = formData.get('password') as string
 
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
         try {
-            // Use the existing browser Supabase client singleton.
-            // createBrowserClient from @supabase/ssr stores session tokens
-            // as cookies in document.cookie, making them available to
-            // Server Components via next/headers cookies().
+            // Use @supabase/supabase-js directly (NOT @supabase/ssr)
+            // to avoid any cookie storage singleton issues
+            const supabase = createClient(supabaseUrl, supabaseKey, {
+                auth: {
+                    // Disable automatic storage — we'll handle cookies ourselves
+                    persistSession: false,
+                    autoRefreshToken: false,
+                }
+            })
+
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
@@ -42,12 +95,27 @@ export function LoginForm() {
                 return
             }
 
-            // Verify the session is available by reading it back.
-            // This forces the @supabase/ssr cookie storage to flush.
-            const { data: sessionCheck } = await supabase.auth.getSession()
-            console.log('[LoginForm] Session verified after login:', !!sessionCheck.session)
-            console.log('[LoginForm] document.cookie length:', document.cookie.length)
-            console.log('[LoginForm] document.cookie preview:', document.cookie.substring(0, 200))
+            console.log('[LoginForm] Sign-in successful, writing cookies manually...')
+
+            // Manually write the session tokens as cookies
+            writeSessionToCookies(supabaseUrl, {
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+            })
+
+            // Verify: try reading what we just wrote
+            const cookieCheck = document.cookie
+            console.log('[LoginForm] Cookie verification — total cookie string length:', cookieCheck.length)
+            console.log('[LoginForm] Cookie names:', cookieCheck.split(';').map(c => c.trim().split('=')[0]).join(', '))
+
+            // Also verify server-side by calling our debug endpoint
+            try {
+                const debugRes = await fetch('/api/debug-auth')
+                const debugData = await debugRes.json()
+                console.log('[LoginForm] Server sees cookies:', JSON.stringify(debugData))
+            } catch (e) {
+                console.warn('[LoginForm] Debug endpoint check failed:', e)
+            }
 
             // Determine role
             const { data: vendorRecord } = await supabase
@@ -58,9 +126,10 @@ export function LoginForm() {
 
             const role = vendorRecord ? 'vendor' : 'planner'
 
-            // Full page reload so Server Components get the fresh cookies
+            // Full page reload
             window.location.href = `/${role}`
         } catch (err) {
+            console.error('[LoginForm] Unexpected error:', err)
             setError('An unexpected error occurred. Please try again.')
             setLoading(false)
         }
