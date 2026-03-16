@@ -12,21 +12,17 @@ import { Label } from '@/components/ui/label'
  * This bypasses @supabase/ssr's createBrowserClient cookie storage
  * which appears to silently fail on Vercel deployments.
  */
-function writeSessionToCookies(supabaseUrl: string, session: Record<string, unknown>) {
+function writeSessionToCookies(supabaseUrl: string, accessToken: string, refreshToken: string) {
     // Extract project ref from URL (e.g., "https://abcdef.supabase.co" → "abcdef")
     const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
     const cookieName = `sb-${projectRef}-auth-token`
 
-    // Store the FULL session object — this is the exact format @supabase/ssr's
-    // createServerClient expects when it reads cookies via getAll().
-    const sessionValue = JSON.stringify(session)
+    // Encode as base64url to avoid special chars (semicolons, commas) breaking
+    // document.cookie parsing. Compact and safe for cookie values.
+    const sessionJson = JSON.stringify({ access_token: accessToken, refresh_token: refreshToken })
+    const encoded = btoa(sessionJson)
 
-    // Supabase SSR chunks cookies at 3180 bytes to stay under browser limits
-    const CHUNK_SIZE = 3180
-    const chunks: string[] = []
-    for (let i = 0; i < sessionValue.length; i += CHUNK_SIZE) {
-        chunks.push(sessionValue.substring(i, i + CHUNK_SIZE))
-    }
+    console.log(`[LoginForm] Session JSON length: ${sessionJson.length}, base64 length: ${encoded.length}`)
 
     // Clear any old chunks first
     for (let i = 0; i < 10; i++) {
@@ -37,17 +33,13 @@ function writeSessionToCookies(supabaseUrl: string, session: Record<string, unkn
     const maxAge = 100 * 365 * 24 * 60 * 60 // 100 years (Supabase default)
     const secure = window.location.protocol === 'https:' ? '; Secure' : ''
 
-    if (chunks.length === 1) {
-        // Single cookie, no chunking needed
-        document.cookie = `${cookieName}=${encodeURIComponent(chunks[0])}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`
-    } else {
-        // Chunked cookies
-        chunks.forEach((chunk, i) => {
-            document.cookie = `${cookieName}.${i}=${encodeURIComponent(chunk)}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`
-        })
-    }
+    // Base64 produces only A-Za-z0-9+/= chars, all safe for cookies.
+    // Single cookie — this should be ~1400 bytes, well under the 4096 limit.
+    const cookieStr = `${cookieName}=${encoded}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`
+    console.log(`[LoginForm] Cookie size: ${cookieStr.length} bytes`)
+    document.cookie = cookieStr
 
-    console.log(`[LoginForm] Manually wrote ${chunks.length} cookie chunk(s) for ${cookieName}`)
+    console.log(`[LoginForm] Wrote cookie ${cookieName}`)
     console.log(`[LoginForm] document.cookie after write:`, document.cookie.substring(0, 300))
 }
 
@@ -97,8 +89,8 @@ export function LoginForm() {
 
             console.log('[LoginForm] Sign-in successful, writing cookies manually...')
 
-            // Manually write the FULL session object as cookies
-            writeSessionToCookies(supabaseUrl, data.session as unknown as Record<string, unknown>)
+            // Manually write the session tokens as cookies
+            writeSessionToCookies(supabaseUrl, data.session.access_token, data.session.refresh_token)
 
             // Verify: try reading what we just wrote
             const cookieCheck = document.cookie

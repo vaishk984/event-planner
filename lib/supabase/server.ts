@@ -1,5 +1,22 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+
+function tryDecodeBase64(value: string): string {
+    try {
+        // Check if it looks like base64 (only A-Za-z0-9+/= chars, no JSON chars like { or ")
+        if (value && !value.startsWith('{') && !value.startsWith('[') && !value.startsWith('"')) {
+            const decoded = atob(value)
+            // Verify it decoded to valid JSON
+            if (decoded.startsWith('{') || decoded.startsWith('[')) {
+                return decoded
+            }
+        }
+    } catch {
+        // Not base64, return as-is
+    }
+    return value
+}
+
 // The standard Supabase SSR implementation deliberately does not cache this
 // factory function to ensure that each call dynamically retrieves the context's cookies.
 // The deduplication of user fetching is properly handled in lib/session.ts instead.
@@ -12,7 +29,11 @@ export async function createClient() {
         {
             cookies: {
                 getAll() {
-                    return cookieStore.getAll()
+                    return cookieStore.getAll().map(cookie => ({
+                        name: cookie.name,
+                        // Decode base64 values from our manual cookie write
+                        value: cookie.name.startsWith('sb-') ? tryDecodeBase64(cookie.value) : cookie.value,
+                    }))
                 },
                 setAll(cookiesToSet) {
                     try {
