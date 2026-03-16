@@ -12,14 +12,14 @@ import { Label } from '@/components/ui/label'
  * This bypasses @supabase/ssr's createBrowserClient cookie storage
  * which appears to silently fail on Vercel deployments.
  */
-function writeSessionToCookies(supabaseUrl: string, session: { access_token: string; refresh_token: string }) {
+function writeSessionToCookies(supabaseUrl: string, session: Record<string, unknown>) {
     // Extract project ref from URL (e.g., "https://abcdef.supabase.co" → "abcdef")
     const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
     const cookieName = `sb-${projectRef}-auth-token`
 
-    // The session value is a JSON-encoded array: [access_token, refresh_token]
-    // This is the format @supabase/ssr expects
-    const sessionValue = JSON.stringify([session.access_token, session.refresh_token])
+    // Store the FULL session object — this is the exact format @supabase/ssr's
+    // createServerClient expects when it reads cookies via getAll().
+    const sessionValue = JSON.stringify(session)
 
     // Supabase SSR chunks cookies at 3180 bytes to stay under browser limits
     const CHUNK_SIZE = 3180
@@ -97,11 +97,8 @@ export function LoginForm() {
 
             console.log('[LoginForm] Sign-in successful, writing cookies manually...')
 
-            // Manually write the session tokens as cookies
-            writeSessionToCookies(supabaseUrl, {
-                access_token: data.session.access_token,
-                refresh_token: data.session.refresh_token,
-            })
+            // Manually write the FULL session object as cookies
+            writeSessionToCookies(supabaseUrl, data.session as unknown as Record<string, unknown>)
 
             // Verify: try reading what we just wrote
             const cookieCheck = document.cookie
