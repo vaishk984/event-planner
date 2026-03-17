@@ -1,46 +1,11 @@
-'use client'
-
-import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function LoginForm() {
-    const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState(false)
-
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault()
-        setLoading(true)
-        setError(null)
-
-        const formData = new FormData(e.currentTarget)
-
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include',
-            })
-
-            const result = await response.json()
-
-            if (!response.ok) {
-                setError(result.error || 'Login failed. Please try again.')
-                setLoading(false)
-                return
-            }
-
-            window.location.assign(result.redirectUrl || '/planner')
-        } catch {
-            setError('An unexpected error occurred. Please try again.')
-            setLoading(false)
-        }
-    }
-
+export function LoginForm({ errorMessage }: { errorMessage?: string | null }) {
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action="/api/auth/login" method="POST" className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -49,7 +14,6 @@ export function LoginForm() {
                     type="email"
                     placeholder="you@example.com"
                     required
-                    disabled={loading}
                     autoComplete="email"
                 />
             </div>
@@ -62,19 +26,18 @@ export function LoginForm() {
                     type="password"
                     placeholder="********"
                     required
-                    disabled={loading}
                     autoComplete="current-password"
                 />
             </div>
 
-            {error && (
+            {errorMessage && (
                 <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                    {error}
+                    {errorMessage}
                 </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
+            <Button type="submit" className="w-full">
+                Sign In
             </Button>
 
             <div className="flex justify-between text-sm text-muted-foreground">

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { getSession, resolveDisplayName } from '@/lib/session'
+import { getSession } from '@/lib/session'
+import { getRequestSession } from '@/lib/request-store'
 import { DashboardData, DashboardLead, DashboardTask, DashboardVendor, TodayEvent } from '@/types/dashboard'
 import { endOfDay, formatDistanceToNow, startOfDay } from 'date-fns'
 
@@ -49,23 +50,13 @@ function formatSupabaseError(error: unknown): string | null {
 export async function getDashboardData(): Promise<DashboardData> {
     try {
         const supabase = await createClient()
-        const session = await getSession()
+        const requestSession = getRequestSession()
+        const session = requestSession || await getSession()
 
         if (!session?.userId) {
             return createEmptyDashboardData()
         }
-
-        const { data: profile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('display_name')
-            .eq('id', session?.userId)
-            .maybeSingle()
-
-        const displayName = session.displayName || profile?.display_name || 'Planner'
-
-        if (profileError && process.env.NODE_ENV === 'development') {
-            console.warn('Dashboard profile unavailable:', formatSupabaseError(profileError))
-        }
+        const displayName = session.displayName || 'Planner'
 
         const [
             eventsResult,

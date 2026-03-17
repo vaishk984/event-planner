@@ -14,6 +14,8 @@ import { AsyncLocalStorage } from 'async_hooks'
 interface RequestStore {
     userId: string | null
     role: string | null
+    email: string | null
+    displayName: string | null
 }
 
 const requestStorage = new AsyncLocalStorage<RequestStore>()
@@ -22,8 +24,14 @@ const requestStorage = new AsyncLocalStorage<RequestStore>()
  * Run a callback with the given user context accessible to all code within it.
  * Called by the dashboard layout after a successful getSession().
  */
-export function runWithRequestStore<T>(userId: string | null, role: string | null, fn: () => T): T {
-    return requestStorage.run({ userId, role }, fn)
+export function runWithRequestStore<T>(
+    userId: string | null,
+    role: string | null,
+    email: string | null,
+    displayName: string | null,
+    fn: () => T
+): T {
+    return requestStorage.run({ userId, role, email, displayName }, fn)
 }
 
 /**
@@ -39,4 +47,11 @@ export function getRequestUserId(): string | null {
  */
 export function getRequestRole(): string | null {
     return requestStorage.getStore()?.role ?? null
+}
+
+/**
+ * Get the full request-scoped session payload.
+ */
+export function getRequestSession() {
+    return requestStorage.getStore() ?? null
 }

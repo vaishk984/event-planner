@@ -7,7 +7,14 @@ import {
     CardTitle,
 } from '@/components/ui/card'
 
-export default function LoginPage() {
+export default async function LoginPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ error?: string }>
+}) {
+    const params = await searchParams
+    const errorMessage = params.error ? decodeURIComponent(params.error) : null
+
     return (
         <Card>
             <CardHeader>
@@ -17,7 +24,7 @@ export default function LoginPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <LoginForm />
+                <LoginForm errorMessage={errorMessage} />
             </CardContent>
         </Card>
     )

@@ -3,13 +3,25 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function buildLoginErrorResponse(request: NextRequest, message: string, status: number) {
+    const wantsJson = request.headers.get('accept')?.includes('application/json')
+
+    if (wantsJson) {
+        return NextResponse.json({ error: message }, { status })
+    }
+
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('error', message)
+    return NextResponse.redirect(loginUrl, { status: 303 })
+}
+
 export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
     if (!email || !password) {
-        return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+        return buildLoginErrorResponse(request, 'Email and password are required', 400)
     }
 
     const cookieStore = await cookies()
@@ -38,11 +50,11 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 401 })
+        return buildLoginErrorResponse(request, error.message, 401)
     }
 
     if (!data.user) {
-        return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 401 })
+        return buildLoginErrorResponse(request, 'Login failed. Please try again.', 401)
     }
 
     // Determine redirect URL based on role
@@ -65,16 +77,15 @@ export async function POST(request: NextRequest) {
         role = profile.role
     }
 
-    const response = NextResponse.json({ success: true, redirectUrl: `/${role}` })
-
-    console.log('[Login API] Attempting to set', cookiesToSet.length, 'cookies from Supabase.')
+    const wantsJson = request.headers.get('accept')?.includes('application/json')
+    const response = wantsJson
+        ? NextResponse.json({ success: true, redirectUrl: `/${role}` })
+        : NextResponse.redirect(new URL(`/${role}`, request.url), { status: 303 })
 
     // Explicitly set all Supabase auth cookies on the OK response
     cookiesToSet.forEach(({ name, value, options }) => {
-        console.log(`[Login API] Setting cookie: ${name}`)
         response.cookies.set(name, value, {
             ...options,
-            // Ensure cookies work on Vercel's HTTPS domain
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
