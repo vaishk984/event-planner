@@ -3,15 +3,42 @@ import type { NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export default async function proxy(request: NextRequest) {
-    const supabaseResponse = NextResponse.next({
+    let supabaseResponse = NextResponse.next({
         request,
     })
 
-    // IMPORTANT: We do NOT call supabase.auth.getUser() here.
-    // On Vercel, calling getUser() in the Edge proxy can clear valid session
-    // cookies if the token format doesn't match what the proxy's Supabase client
-    // expects — the setAll callback overwrites the cookie with an empty value.
-    // Token refresh is handled by server-side createClient in lib/supabase/server.ts.
+    // Create the Supabase client purely to handle cookie forwarding.
+    // When createServerClient is initialized, if the session is expired,
+    // it will try to refresh it and call setAll(). Or if the client just logged in,
+    // it ensures the cookies are readable.
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return request.cookies.getAll()
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                    supabaseResponse = NextResponse.next({
+                        request,
+                    })
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        supabaseResponse.cookies.set(name, value, options)
+                    )
+                },
+            },
+        }
+    )
+
+    // IMPORTANT: We DO NOT call supabase.auth.getUser() here.
+    // Why? Because getUser() validates the token against the Supabase API.
+    // If the token format is slightly unexpected by the SSR package but valid overall
+    // (which was happening), getUser() fails, assumes the user is logged out,
+    // and calls setAll() with empty values — silently deleting the user's cookies.
+    // By skipping getUser() in the edge proxy, we simply pass the cookies forward
+    // to the Server Components (layout.tsx) which handle their own validation securely.
 
     // Add security headers
     supabaseResponse.headers.set('X-Frame-Options', 'DENY')
