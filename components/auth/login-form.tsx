@@ -1,62 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/client'
+import { login } from '@/actions/auth/login'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+const initialState = {
+    error: null,
+}
+
 export function LoginForm() {
-    const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState(false)
-
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault()
-        setLoading(true)
-        setError(null)
-
-        const formData = new FormData(e.currentTarget)
-        const email = formData.get('email') as string
-        const password = formData.get('password') as string
-
-        try {
-            const { data, error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
-
-            if (signInError) {
-                setError(signInError.message)
-                setLoading(false)
-                return
-            }
-
-            if (!data.session) {
-                setError('Login failed. No session returned.')
-                setLoading(false)
-                return
-            }
-
-            // Determine role
-            const { data: vendorRecord } = await supabase
-                .from('vendors')
-                .select('id')
-                .eq('user_id', data.user.id)
-                .maybeSingle()
-
-            const role = vendorRecord ? 'vendor' : 'planner'
-
-            // Full page reload so Server Components see the cookies
-            window.location.href = `/${role}`
-        } catch (err) {
-            setError('An unexpected error occurred. Please try again.')
-            setLoading(false)
-        }
-    }
+    const [state, formAction, isPending] = useActionState(login, initialState)
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={formAction} className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -65,7 +24,7 @@ export function LoginForm() {
                     type="email"
                     placeholder="you@example.com"
                     required
-                    disabled={loading}
+                    disabled={isPending}
                     autoComplete="email"
                 />
             </div>
@@ -76,21 +35,21 @@ export function LoginForm() {
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="********"
                     required
-                    disabled={loading}
+                    disabled={isPending}
                     autoComplete="current-password"
                 />
             </div>
 
-            {error && (
+            {state.error && (
                 <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                    {error}
+                    {state.error}
                 </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
+            <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? 'Signing in...' : 'Sign In'}
             </Button>
 
             <div className="flex justify-between text-sm text-muted-foreground">

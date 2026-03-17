@@ -5,10 +5,14 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthenticatedUser } from '@/lib/session'
 
+export interface LoginState {
+    error: string | null
+}
+
 /**
  * Login with email and password
  */
-export async function login(formData: FormData) {
+export async function login(_prevState: LoginState, formData: FormData): Promise<LoginState> {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
@@ -37,14 +41,14 @@ export async function login(formData: FormData) {
         .from('user_profiles')
         .select('role, role_id')
         .eq('id', data.user.id)
-        .single()
+        .maybeSingle()
 
     // Check if user has a vendor record (direct check)
     const { data: vendorRecord } = await supabase
         .from('vendors')
         .select('id')
         .eq('user_id', data.user.id)
-        .single()
+        .maybeSingle()
 
     // Determine role: check vendor record first, then role column, then default
     let role = 'planner'
