@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 
 // Complete Client Intake Data Structure
+import { saveClientSubmission } from '@/lib/actions/intake-actions'
+
 export interface ClientIntakeData {
     // Tab 1: About You
     clientName: string
@@ -287,8 +289,6 @@ export function ClientIntakeProvider({ children, token, plannerId }: { children:
 
         // Save to intake repository using unified API
         if (typeof window !== 'undefined') {
-            const { saveClientSubmission } = await import('@/lib/actions/intake-actions')
-
             // Map ClientIntakeData to Intake type
             const intakeData = {
                 token: token,
