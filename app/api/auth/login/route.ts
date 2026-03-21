@@ -88,8 +88,10 @@ export async function POST(request: NextRequest) {
             ...options,
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',
-            httpOnly: true,
             path: '/',
+            // NOT httpOnly — @supabase/ssr's browser client must read these
+            // cookies via document.cookie to stay in sync with token rotations
+            // performed by proxy.ts's getUser() call.
         })
     })
 

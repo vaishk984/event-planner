@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import { runWithRequestStore } from '@/lib/request-store'
 import { DashboardWrapper } from '@/components/layout/dashboard-wrapper'
+import { SessionRefresh } from '@/components/auth/session-refresh'
 
 export default async function DashboardLayout({
     children,
@@ -26,6 +27,7 @@ export default async function DashboardLayout({
                 userRole={session.role}
                 userId={session.userId}
             >
+                <SessionRefresh />
                 {children}
             </DashboardWrapper>
         )
