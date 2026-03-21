@@ -21,6 +21,18 @@ async function getAuthenticatedUserFromClient(
     return user
 }
 
+async function getSessionUserFromClient(
+    supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<User | null> {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (session?.user) {
+        return session.user
+    }
+
+    return getAuthenticatedUserFromClient(supabase)
+}
+
 export const getAuthenticatedUser = cache(async () => {
     const supabase = await createClient()
     return getAuthenticatedUserFromClient(supabase)
@@ -125,7 +137,10 @@ async function ensureUserProfile(
 // causing the second getUser() to fail on Vercel's serverless runtime.
 export const getSession = cache(async () => {
     const supabase = await createClient()
-    const user = await getAuthenticatedUserFromClient(supabase)
+    // Prefer the cookie-backed session snapshot first. Protected routes have
+    // already been authenticated by proxy, so this avoids a second auth-server
+    // round trip during nested server renders and route refreshes.
+    const user = await getSessionUserFromClient(supabase)
 
     if (!user) {
         return null

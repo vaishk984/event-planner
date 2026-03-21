@@ -46,16 +46,24 @@ class ApiClient {
     }
 
     /**
-     * Get auth headers
+     * Get auth headers using Supabase's browser client session.
+     * @supabase/ssr stores tokens in chunked cookies named
+     * sb-<project-ref>-auth-token(.0, .1, ...), not sb-access-token.
      */
-    private getAuthHeaders(): HeadersInit {
-        // Get token from cookie or storage
-        const token = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('sb-access-token='))
-            ?.split('=')[1];
+    private async getAuthHeaders(): Promise<HeadersInit> {
+        try {
+            const { createClient } = await import('@/lib/supabase/client')
+            const supabase = createClient()
+            const { data: { session } } = await supabase.auth.getSession()
 
-        return token ? { Authorization: `Bearer ${token}` } : {};
+            if (session?.access_token) {
+                return { Authorization: `Bearer ${session.access_token}` }
+            }
+        } catch {
+            // Fall through - no auth header
+        }
+
+        return {}
     }
 
     /**
@@ -67,17 +75,28 @@ class ApiClient {
     ): Promise<ApiResponseData<T>> {
         const { params, ...fetchOptions } = options;
         const url = this.buildUrl(endpoint, params);
+        const authHeaders = await this.getAuthHeaders();
 
         const response = await fetch(url, {
             ...fetchOptions,
+            credentials: fetchOptions.credentials ?? 'include',
             headers: {
                 'Content-Type': 'application/json',
-                ...this.getAuthHeaders(),
+                ...authHeaders,
                 ...fetchOptions.headers,
             },
         });
 
-        const data = await response.json();
+        let data: ApiResponseData<T>;
+        try {
+            data = await response.json();
+        } catch {
+            throw new ApiError(
+                `Server returned ${response.status} (non-JSON response)`,
+                response.status,
+                'INVALID_RESPONSE'
+            );
+        }
 
         if (!response.ok) {
             throw new ApiError(
