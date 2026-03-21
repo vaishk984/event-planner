@@ -10,17 +10,6 @@ export default async function proxy(request: NextRequest) {
         request,
     })
 
-    // Log incoming cookies for debugging
-    const incomingCookies = request.cookies.getAll()
-    const sbCookies = incomingCookies.filter(c => c.name.startsWith('sb-'))
-    console.log(`[Proxy] ${request.method} ${path} | Total cookies: ${incomingCookies.length} | Supabase cookies: ${sbCookies.length}`)
-    if (sbCookies.length > 0) {
-        console.log(`[Proxy] Supabase cookie names: ${sbCookies.map(c => `${c.name}(${c.value.length}chars)`).join(', ')}`)
-    }
-
-    let setAllCalled = false
-    let setAllCookieNames: string[] = []
-
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,8 +19,6 @@ export default async function proxy(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    setAllCalled = true
-                    setAllCookieNames = cookiesToSet.map(c => `${c.name}(${c.value.length}chars)`)
                     cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
                     supabaseResponse = NextResponse.next({
                         request,
@@ -44,12 +31,17 @@ export default async function proxy(request: NextRequest) {
         }
     )
 
-    // Keep the Supabase session fresh at the edge
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    console.log(`[Proxy] getUser result: ${user ? `user=${user.id.substring(0, 8)}...` : 'null'} | error: ${error?.message || 'none'} | setAll called: ${setAllCalled}`)
-    if (setAllCalled) {
-        console.log(`[Proxy] setAll wrote: ${setAllCookieNames.join(', ')}`)
+    // IMPORTANT WORKAROUND FOR NEXT.JS APP ROUTER + SUPABASE:
+    // Only keep the session fresh on actual page navigations.
+    // If we call getUser() on Server Actions (which are POSTs) or /api routes,
+    // the proxy might refresh the token while the Next.js Server Action is
+    // simultaneously using the OLD token from cookies().
+    // Supabase will detect token reuse, revoke the session entirely,
+    // and the Server Action will wipe all cookies.
+    if (!path.startsWith('/api') && request.method === 'GET') {
+        const { error } = await supabase.auth.getUser()
+        // If there's a hard error, we don't necessarily clear here —
+        // we let the Server Components redirect to /login
     }
 
     supabaseResponse.headers.set('X-Frame-Options', 'DENY')
