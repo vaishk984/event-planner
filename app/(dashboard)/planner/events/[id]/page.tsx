@@ -1,64 +1,45 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { EventStatusBadge } from '@/components/events/event-status-badge'
-import {
-    Calendar, Users, MapPin, IndianRupee, Clock, CheckCircle2,
-    AlertCircle, ArrowRight, Share2, Sparkles, Loader2
-} from 'lucide-react'
-import { FeasibilityCheck } from '@/components/workspace/feasibility-check'
 import Link from 'next/link'
-import type { Event } from '@/types/domain'
-import { getEvent } from '@/lib/actions/event-actions'
+import { AlertCircle, ArrowRight, Calendar, CheckCircle2, Clock, IndianRupee, MapPin, Share2, Sparkles, Users } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EventStatusBadge } from '@/components/events/event-status-badge'
+import { FeasibilityCheck } from '@/components/workspace/feasibility-check'
+import { getRequestUserId } from '@/lib/request-store'
+import { getUserId } from '@/lib/session'
+import { eventService } from '@/lib/services/event-service'
 
-export default function EventOverviewPage() {
-    const params = useParams()
-    const id = params.id as string
+export default async function EventOverviewPage({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}) {
+    const { id } = await params
+    const plannerId = getRequestUserId() || await getUserId()
 
-    const [event, setEvent] = useState<Event | null>(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        const loadEvent = async () => {
-            const eventData = await getEvent(id)
-
-            if (!eventData) {
-                setLoading(false)
-                setEvent(null)
-                return
-            }
-
-            setEvent(eventData)
-            setLoading(false)
-        }
-        loadEvent()
-    }, [id])
-
-    if (loading) {
+    if (!plannerId) {
         return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+                <AlertCircle className="w-12 h-12 text-red-500" />
+                <h2 className="text-xl font-semibold">Could not load event</h2>
+                <p className="text-gray-500">Authentication session is missing.</p>
+                <Link href="/login">
+                    <Button variant="outline">Back to Login</Button>
+                </Link>
             </div>
         )
     }
+
+    const event = await eventService.getEvent(id, plannerId)
 
     if (!event) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
                 <AlertCircle className="w-12 h-12 text-red-500" />
                 <h2 className="text-xl font-semibold">Could not load event</h2>
-                <p className="text-gray-500">
-                    Event ID: {id}
-                </p>
+                <p className="text-gray-500">Event ID: {id}</p>
                 <div className="p-4 bg-gray-100 rounded text-xs font-mono max-w-lg overflow-auto">
-                    Check console for detailed error.
-                    Possible causes: RLS policies, invalid ID, or missing data.
+                    The event does not belong to the current planner session or no longer exists.
                 </div>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
                 <Link href="/planner/events">
                     <Button variant="outline">Back to Events</Button>
                 </Link>
@@ -66,12 +47,10 @@ export default function EventOverviewPage() {
         )
     }
 
-    // Calculate days countdown
     const daysUntil = Math.floor(
         (new Date(event.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
     )
 
-    // Mock progress data
     const progress = {
         venue: event.venueName ? 100 : 0,
         caterer: 0,
@@ -82,7 +61,6 @@ export default function EventOverviewPage() {
 
     return (
         <div className="space-y-6">
-            {/* Quick Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
                     <CardContent className="p-4">
@@ -92,7 +70,7 @@ export default function EventOverviewPage() {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-orange-700">
-                                    {daysUntil > 0 ? daysUntil : daysUntil === 0 ? '🎉' : 'Done'}
+                                    {daysUntil > 0 ? daysUntil : daysUntil === 0 ? 'Today' : 'Done'}
                                 </p>
                                 <p className="text-xs text-orange-600">Days to Go</p>
                             </div>
@@ -145,7 +123,6 @@ export default function EventOverviewPage() {
                 </Card>
             </div>
 
-            {/* Proposal Builder CTA */}
             <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 border-0 text-white overflow-hidden">
                 <CardContent className="py-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -165,11 +142,8 @@ export default function EventOverviewPage() {
                 </CardContent>
             </Card>
 
-            {/* Main Content Grid */}
             <div className="grid md:grid-cols-3 gap-6">
-                {/* Left Column - Event Details */}
                 <div className="md:col-span-2 space-y-6">
-                    {/* Event Info Card */}
                     <Card>
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
@@ -184,7 +158,7 @@ export default function EventOverviewPage() {
                                     <div>
                                         <p className="text-sm text-gray-500">Date</p>
                                         <p className="font-medium">{new Date(event.date).toLocaleDateString('en-IN', {
-                                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
                                         })}</p>
                                     </div>
                                 </div>
@@ -208,7 +182,6 @@ export default function EventOverviewPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Planning Progress Card */}
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg">Planning Progress</CardTitle>
@@ -246,9 +219,7 @@ export default function EventOverviewPage() {
                     </Card>
                 </div>
 
-                {/* Right Column - Quick Actions */}
                 <div className="space-y-6">
-                    {/* Quick Actions Card */}
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg">Quick Actions</CardTitle>
@@ -272,19 +243,14 @@ export default function EventOverviewPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Feasibility Check */}
                     <div className="md:col-span-2">
                         <FeasibilityCheck
                             date={event.date}
                             budgetMax={event.budgetMax || 0}
                             guestCount={event.guestCount || 0}
-                            onPassed={() => {
-                                console.log('Passed feasibility check')
-                            }}
                         />
                     </div>
 
-                    {/* Alerts Card */}
                     <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg text-amber-800 flex items-center gap-2">
@@ -292,9 +258,9 @@ export default function EventOverviewPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="text-sm text-amber-700 space-y-2">
-                            <p>• Confirm venue booking</p>
-                            <p>• Finalize caterer selection</p>
-                            <p>• Send proposal to client</p>
+                            <p>Confirm venue booking</p>
+                            <p>Finalize caterer selection</p>
+                            <p>Send proposal to client</p>
                         </CardContent>
                     </Card>
                 </div>

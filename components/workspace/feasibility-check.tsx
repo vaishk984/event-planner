@@ -12,7 +12,7 @@ interface FeasibilityCheckProps {
     date: string
     budgetMax: number
     guestCount: number
-    onPassed: () => void
+    onPassed?: () => void
 }
 
 export function FeasibilityCheck({ date, budgetMax, guestCount, onPassed }: FeasibilityCheckProps) {
@@ -109,7 +109,7 @@ export function FeasibilityCheck({ date, budgetMax, guestCount, onPassed }: Feas
                         <Button
                             className="w-full"
                             variant={score > 50 ? "default" : "secondary"}
-                            onClick={onPassed}
+                            onClick={() => onPassed?.()}
                             disabled={score < 30} // Hard block if score is terrible
                         >
                             {score > 50 ? 'Proceed to Planning Workspace' : 'Proceed with Caution'}

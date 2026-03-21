@@ -5,20 +5,20 @@ import { cache } from 'react'
 async function getAuthenticatedUserFromClient(
     supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<User | null> {
-    const { data: { session }, error } = await supabase.auth.getSession()
+    const { data: { user }, error } = await supabase.auth.getUser()
 
     if (error) {
         if (process.env.NODE_ENV === 'development') {
-            console.warn('[Session] getSession error:', error.message)
+            console.warn('[Session] getUser error:', error.message)
         }
         return null
     }
 
-    if (!session?.user) {
+    if (!user) {
         return null
     }
 
-    return session.user
+    return user
 }
 
 export const getAuthenticatedUser = cache(async () => {

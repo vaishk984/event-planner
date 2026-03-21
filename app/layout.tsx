@@ -1,7 +1,9 @@
 import "./globals.css"
+import { BrowserSessionBridge } from "@/components/auth/browser-session-bridge"
 import { QuoteProvider } from "@/components/providers/quote-provider"
 import { EventProvider } from "@/components/providers/event-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { getSession } from "@/lib/session"
 
 export const viewport = {
   width: 'device-width',
@@ -19,11 +21,14 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const session = await getSession()
+
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        <EventProvider userId={null}>
-          <QuoteProvider userId={null}>
+        <EventProvider userId={session?.userId || null}>
+          <QuoteProvider userId={session?.userId || null}>
+            <BrowserSessionBridge />
             {children}
             <Toaster />
           </QuoteProvider>

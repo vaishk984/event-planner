@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 // The standard Supabase SSR implementation deliberately does not cache this
@@ -36,8 +36,7 @@ export async function createClient() {
  */
 export async function getUser() {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const { data: { user } } = await supabase.auth.getUser()
     return user || null
 }
 
