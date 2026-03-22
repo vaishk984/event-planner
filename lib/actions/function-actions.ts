@@ -64,7 +64,7 @@ export async function createFunction(eventId: string, data: Partial<EventFunctio
         notes: data.notes,
     }
 
-    const result = await supabaseFunctionRepository.create(functionData as any)
+    const result = await supabaseFunctionRepository.create(functionData as unknown as Omit<EventFunction, 'id' | 'createdAt' | 'updatedAt'>)
 
     if (result.success) {
         revalidatePath(`/planner/events/${eventId}`)

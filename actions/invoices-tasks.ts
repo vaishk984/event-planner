@@ -1,7 +1,10 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserId } from '@/lib/session'
+import { createLogger } from '@/lib/logger'
 import { revalidatePath } from 'next/cache'
+
+const logger = createLogger('InvoicesTasks')
 
 // ============================================================================
 // INVOICE ACTIONS
@@ -19,7 +22,7 @@ export async function getInvoices() {
         .order('created_at', { ascending: false })
 
     if (error) {
-        console.error('Error fetching invoices:', error)
+        logger.error('Failed to fetch invoices with join', error)
         // Fallback without join
         const { data: fallback } = await supabase
             .from('invoices')
@@ -48,7 +51,7 @@ export async function getInvoicesByEvent(eventId: string) {
         .order('created_at', { ascending: false })
 
     if (error) {
-        console.error('Error fetching invoices:', error)
+        logger.error('Failed to fetch invoices by event', error)
         return { data: [] }
     }
 
@@ -100,7 +103,7 @@ export async function createInvoice(formData: {
         .single()
 
     if (invoiceError || !invoice) {
-        console.error('Error creating invoice:', invoiceError)
+        logger.error('Failed to create invoice', invoiceError)
         return { error: 'Failed to create invoice' }
     }
 
@@ -149,7 +152,7 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
         .eq('planner_id', userId)
 
     if (error) {
-        console.error('Error updating invoice:', error)
+        logger.error('Failed to update invoice status', error)
         return { error: 'Failed to update invoice' }
     }
 
@@ -173,7 +176,7 @@ export async function getTasks() {
         .order('created_at', { ascending: false })
 
     if (error) {
-        console.error('Error fetching tasks:', error)
+        logger.error('Failed to fetch tasks with join', error)
         const { data: fallback } = await supabase
             .from('tasks')
             .select('*')
@@ -201,7 +204,7 @@ export async function getTasksByEvent(eventId: string) {
         .order('due_date', { ascending: true })
 
     if (error) {
-        console.error('Error fetching tasks:', error)
+        logger.error('Failed to fetch tasks by event', error)
         return { data: [] }
     }
 
@@ -237,7 +240,7 @@ export async function createTask(formData: {
         .single()
 
     if (error) {
-        console.error('Error creating task:', error)
+        logger.error('Failed to create task', error)
         return { error: 'Failed to create task' }
     }
 
@@ -260,7 +263,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
         .eq('planner_id', userId)
 
     if (error) {
-        console.error('Error updating task:', error)
+        logger.error('Failed to update task status', error)
         return { error: 'Failed to update task' }
     }
 
@@ -283,7 +286,7 @@ export async function deleteTask(taskId: string) {
         .eq('planner_id', userId)
 
     if (error) {
-        console.error('Error deleting task:', error)
+        logger.error('Failed to delete task', error)
         return { error: 'Failed to delete task' }
     }
 

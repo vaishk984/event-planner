@@ -152,7 +152,7 @@ export class EventService {
             };
         }
 
-        return eventRepository.create(eventData as any);
+        return eventRepository.create(eventData as unknown as Omit<Event, 'id' | 'createdAt' | 'updatedAt'>);
     }
 
     /**

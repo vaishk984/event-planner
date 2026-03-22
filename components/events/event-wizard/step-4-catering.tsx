@@ -75,7 +75,7 @@ export function Step4Catering({ data, updateData, guestCount }: Step4Props) {
                     {MENU_STYLES.map((style) => (
                         <button
                             key={style.id}
-                            onClick={() => updateData({ menuStyle: style.id as any })}
+                            onClick={() => updateData({ menuStyle: style.id as EventPlan['catering']['menuStyle'] })}
                             className={`p-4 rounded-xl border-2 text-center transition-all ${data.menuStyle === style.id
                                     ? 'border-indigo-500 bg-indigo-50 shadow-md'
                                     : 'border-gray-200 hover:border-indigo-300'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useClientIntake, getBudgetFromSlider } from '@/components/providers/client-intake-provider'
+import { useClientIntake, getBudgetFromSlider, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -94,7 +94,7 @@ export function Tab3Style() {
                             return (
                                 <button
                                     key={style.id}
-                                    onClick={() => updateData('stylePreference', style.id as any)}
+                                    onClick={() => updateData('stylePreference', style.id as ClientIntakeData['stylePreference'])}
                                     className={`p-4 rounded-xl border-2 transition-all text-left ${isSelected
                                         ? 'border-purple-500 bg-purple-50 shadow-lg scale-[1.02]'
                                         : 'border-gray-200 hover:border-gray-300'
@@ -118,7 +118,7 @@ export function Tab3Style() {
                             return (
                                 <button
                                     key={color.id}
-                                    onClick={() => updateData('colorMood', color.id as any)}
+                                    onClick={() => updateData('colorMood', color.id as ClientIntakeData['colorMood'])}
                                     className={`p-3 rounded-xl border-2 transition-all ${isSelected
                                         ? 'border-indigo-500 bg-indigo-50 shadow-lg'
                                         : 'border-gray-200 hover:border-gray-300'

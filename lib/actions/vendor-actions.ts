@@ -42,7 +42,7 @@ export async function searchVendors(
     query: string,
     filters?: { category?: string; city?: string; priceRange?: string }
 ): Promise<Vendor[]> {
-    return supabaseVendorRepository.search(query, filters as any)
+    return supabaseVendorRepository.search(query, filters as { category?: import('@/types/domain').VendorCategory; city?: string; priceRange?: string })
 }
 
 /**
@@ -256,8 +256,7 @@ export async function createVendorPackage(data: Partial<VendorPackage>): Promise
         vendorId: vendor.id
     }
 
-    // Cast to any to bypass strict type check for now, assuming validation happens in repo/db
-    const result = await supabaseVendorPackageRepository.create(packageData as any)
+    const result = await supabaseVendorPackageRepository.create(packageData as unknown as Omit<VendorPackage, 'id' | 'createdAt' | 'updatedAt'>)
 
     if (result.success) {
         revalidatePath('/vendor/profile')

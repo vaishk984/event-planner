@@ -15,7 +15,7 @@ import { getPublicProposalDetails, updateProposalStatus, getFinalProposal, updat
 
 // Helper functions for icons/colors
 const getCategoryIcon = (iconName: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
         Building2, UtensilsCrossed, Camera, Sparkles, Music, Brush, Car
     }
     return icons[iconName] || Sparkles
@@ -43,7 +43,40 @@ const getTimelineColor = (category: string) => {
 
 export default function ClientProposalPage({ params }: { params: Promise<{ token: string }> }) {
     const { token } = use(params)
-    const [proposal, setProposal] = useState<any>(null)
+    interface ProposalCategory {
+        id: string
+        name: string
+        icon: string
+        vendor: { name: string; rating: number }
+        price: number
+        perPlatePrice?: number | null
+        guestCount?: number | null
+        items: string[]
+        status: string
+    }
+    interface ProposalTimeline {
+        id: string
+        time: string
+        duration?: string | null
+        title: string
+        description?: string
+        category: string
+    }
+    interface ProposalData {
+        eventName: string
+        date: string
+        guestCount: number
+        city: string
+        plannerName: string
+        plannerPhone: string
+        personalMessage: string
+        categories: ProposalCategory[]
+        timeline: ProposalTimeline[]
+        status: string
+        validUntil: string
+        postApprovalNote?: string
+    }
+    const [proposal, setProposal] = useState<ProposalData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [showFeedback, setShowFeedback] = useState(false)
@@ -61,19 +94,20 @@ export default function ClientProposalPage({ params }: { params: Promise<{ token
 
                 if (isFinalToken) {
                     const result = await getFinalProposal(token)
-                    if ('error' in result) {
+                    if ('error' in result && result.error) {
                         setError(result.error || 'Final proposal not found')
-                    } else {
-                        setProposal((result as any).proposal)
-                        setApproved((result as any).status === 'approved')
+                    } else if ('proposal' in result) {
+                        setProposal(result.proposal as ProposalData)
+                        setApproved(('status' in result ? result.status : undefined) === 'approved')
                     }
                 } else {
                     const result = await getPublicProposalDetails(token)
                     if (result.error || !result.proposal) {
                         setError(result.error || 'Failed to load proposal')
                     } else {
-                        setProposal((result as any).proposal)
-                        setApproved((result as any).proposal.status === 'approved')
+                        const proposalData = result.proposal as ProposalData
+                        setProposal(proposalData)
+                        setApproved(proposalData.status === 'approved')
                     }
                 }
             } catch (err) {
@@ -86,7 +120,7 @@ export default function ClientProposalPage({ params }: { params: Promise<{ token
         loadProposal()
     }, [token])
 
-    const totalAmount = proposal?.categories.reduce((sum: number, cat: any) => sum + (cat.price || 0), 0) || 0
+    const totalAmount = proposal?.categories.reduce((sum: number, cat: ProposalCategory) => sum + (cat.price || 0), 0) || 0
 
     const handleApprove = async () => {
         setApproving(true)
@@ -245,7 +279,7 @@ export default function ClientProposalPage({ params }: { params: Promise<{ token
                             <p>No vendors or services confirmed yet.</p>
                         </Card>
                     ) : (
-                        proposal.categories.map((category: any, idx: number) => {
+                        proposal.categories.map((category: ProposalCategory, idx: number) => {
                             const Icon = getCategoryIcon(category.icon)
                             return (
                                 <Card key={`${category.id}-${idx}`} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -297,7 +331,7 @@ export default function ClientProposalPage({ params }: { params: Promise<{ token
                 <Card className="mb-8 overflow-hidden">
                     <CardContent className="p-0">
                         <div className="relative">
-                            {proposal.timeline.map((item: any, idx: number) => (
+                            {proposal.timeline.map((item: ProposalTimeline, idx: number) => (
                                 <div key={item.id} className="flex border-b last:border-b-0">
                                     {/* Time Column */}
                                     <div className="w-24 flex-shrink-0 p-4 bg-gray-50 flex flex-col items-center justify-center border-r">

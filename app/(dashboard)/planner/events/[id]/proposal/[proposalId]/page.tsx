@@ -102,8 +102,6 @@ export default function ProposalPreviewPage() {
 
             // Fetch assigned vendors (from booking requests)
             const bookingRequests = await getRequestsForEvent(eventId)
-            console.log('[ProposalPreview] eventId:', eventId)
-            console.log('[ProposalPreview] bookingRequests:', bookingRequests)
 
             // Group vendors by category
             const vendorsByCategory: VendorCategory[] = bookingRequests
@@ -128,7 +126,6 @@ export default function ProposalPreviewPage() {
                     }
                 })
 
-            console.log('[ProposalPreview] vendorsByCategory:', vendorsByCategory)
             setCategories(vendorsByCategory)
         } catch (error) {
             console.error('Failed to load proposal data:', error)

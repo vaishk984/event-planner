@@ -36,10 +36,27 @@ function getStatusLabel(status: string) {
     }
 }
 
+interface Invoice {
+    id: string
+    invoice_number: string
+    event_id: string
+    client_name: string
+    client_email?: string
+    status: string
+    subtotal: number
+    platform_fee: number
+    total: number
+    paid_amount: number
+    due_date?: string
+    paid_at?: string
+    created_at: string
+    events?: { name: string }
+}
+
 export default function InvoicesPage() {
-    const [invoices, setInvoices] = useState<any[]>([])
+    const [invoices, setInvoices] = useState<Invoice[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [sending, setSending] = useState(false)
     const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -384,7 +401,7 @@ function CreateInvoiceDialog({
     onClose: () => void
     onCreated: () => void
 }) {
-    const [events, setEvents] = useState<any[]>([])
+    const [events, setEvents] = useState<{ id: string; name: string; client_name?: string; client_email?: string; date?: string }[]>([])
     const [selectedEventId, setSelectedEventId] = useState('')
     const [clientName, setClientName] = useState('')
     const [clientEmail, setClientEmail] = useState('')
@@ -429,11 +446,15 @@ function CreateInvoiceDialog({
             .in('status', ['accepted', 'confirmed'])
 
         if (bookings && bookings.length > 0) {
-            const autoItems = bookings.map((b: any) => ({
-                description: `${(b as any).vendors?.company_name || 'Vendor'} — ${b.service || 'Service'}`,
-                quantity: 1,
-                rate: b.quoted_amount || b.budget || 0
-            }))
+            interface BookingJoin { service?: string; budget?: number; quoted_amount?: number; vendors?: { company_name?: string } | { company_name?: string }[] | null }
+            const autoItems = (bookings as BookingJoin[]).map((b) => {
+                const vendor = Array.isArray(b.vendors) ? b.vendors[0] : b.vendors
+                return {
+                    description: `${vendor?.company_name || 'Vendor'} — ${b.service || 'Service'}`,
+                    quantity: 1,
+                    rate: b.quoted_amount || b.budget || 0
+                }
+            })
             setItems(autoItems)
         }
 
@@ -447,9 +468,9 @@ function CreateInvoiceDialog({
 
     const addItem = () => setItems([...items, { description: '', quantity: 1, rate: 0 }])
     const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx))
-    const updateItem = (idx: number, field: string, value: any) => {
+    const updateItem = (idx: number, field: keyof typeof items[number], value: string | number) => {
         const updated = [...items]
-            ; (updated[idx] as any)[field] = value
+        updated[idx] = { ...updated[idx], [field]: value }
         setItems(updated)
     }
 

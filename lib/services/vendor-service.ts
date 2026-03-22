@@ -45,7 +45,7 @@ function mapToUiVendor(dbVendor: DbVendor): UiVendor {
 }
 
 export async function getVendorsByCategory(category: VendorCategory): Promise<UiVendor[]> {
-    const vendors = await supabaseVendorRepository.findByCategory(category as any);
+    const vendors = await supabaseVendorRepository.findByCategory(category as import('@/types/domain').VendorCategory);
     return vendors.map(mapToUiVendor);
 }
 

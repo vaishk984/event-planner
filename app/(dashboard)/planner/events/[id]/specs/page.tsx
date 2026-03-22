@@ -41,7 +41,7 @@ const getColorClasses = (color: string) => {
 }
 
 // Map category id to icon
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
     venue: Building2, catering: UtensilsCrossed, bar: Wine, decor: Sparkles,
     mandap: Heart, photography: Camera, entertainment: Music, transport: Car,
     staff: Shield, accommodation: Hotel, mehendi: Brush, gifts: Gift,
@@ -52,7 +52,7 @@ export default function SpecificationsPage() {
     const params = useParams()
     const eventId = params.id as string
 
-    const [event, setEvent] = useState<any>(null)
+    const [event, setEvent] = useState<Event | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -108,7 +108,8 @@ export default function SpecificationsPage() {
                     if (assignments && assignments.length > 0) {
                         const vendorNameMap: Record<string, string> = {}
                         for (const a of assignments) {
-                            const vendorName = (a as any).vendors?.company_name
+                            const vendors = a.vendors as { company_name?: string } | null
+                            const vendorName = vendors?.company_name
                             if (vendorName && a.vendor_category) {
                                 vendorNameMap[a.vendor_category] = vendorName
                             }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { CategoryShowroom } from '@/components/client-portal/category-showroom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -84,7 +84,7 @@ export function Tab6Entertainment() {
                         {ENTERTAINMENT_TYPES.map((type) => (
                             <button
                                 key={type.id}
-                                onClick={() => updateEntertainment({ type: type.id as any })}
+                                onClick={() => updateEntertainment({ type: type.id as ClientIntakeData['entertainment']['type'] })}
                                 className={`p-4 rounded-xl border-2 text-center transition-all ${data.entertainment.type === type.id
                                     ? 'border-purple-500 bg-purple-50 shadow-md scale-105'
                                     : 'border-gray-200 hover:border-purple-300'
@@ -124,7 +124,7 @@ export function Tab6Entertainment() {
                         {SOUND_LEVELS.map((level) => (
                             <button
                                 key={level.id}
-                                onClick={() => updateEntertainment({ soundLevel: level.id as any })}
+                                onClick={() => updateEntertainment({ soundLevel: level.id as ClientIntakeData['entertainment']['soundLevel'] })}
                                 className={`p-3 rounded-lg border-2 text-center transition-all ${data.entertainment.soundLevel === level.id
                                     ? 'border-pink-500 bg-pink-50'
                                     : 'border-gray-200 hover:border-pink-300'

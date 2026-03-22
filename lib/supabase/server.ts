@@ -18,12 +18,15 @@ export async function createClient() {
                 setAll(cookiesToSet) {
                     try {
                         cookiesToSet.forEach(({ name, value, options }) => {
-                            cookieStore.set(name, value, options)
+                            cookieStore.set(name, value, { ...options, httpOnly: false })
                         })
-                    } catch (error) {
-                        // The `setAll` method was called from a Server Component.
-                        // This can be ignored if you have middleware/proxy refreshing
-                        // user sessions.
+                    } catch {
+                        // setAll was called from a Server Component (read-only context).
+                        // This is expected — the proxy.ts middleware handles token refresh
+                        // and cookie persistence for protected routes.
+                        if (process.env.NODE_ENV === 'development') {
+                            console.warn('[Supabase] setAll failed (read-only context — proxy handles refresh)')
+                        }
                     }
                 },
             },
@@ -36,8 +39,7 @@ export async function createClient() {
  */
 export async function getUser() {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const { data: { user } } = await supabase.auth.getUser()
     return user || null
 }
 

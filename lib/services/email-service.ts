@@ -1,7 +1,9 @@
 // Email Service using Resend (Free: 100 emails/day)
 // https://resend.com/docs
 
-import { logger } from '@/lib/utils/logger'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('EmailService')
 
 interface EmailOptions {
     to: string
@@ -31,10 +33,11 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
         // In development, just log the email
         if (process.env.NODE_ENV === 'development') {
-            console.log('\n📧 EMAIL (dev mode - not actually sent):')
-            console.log(`   To: ${options.to}`)
-            console.log(`   Subject: ${options.subject}`)
-            console.log('   ---')
+            logger.debug('Email (dev mode - not sent)', {
+                action: 'send_email',
+                resource: options.to,
+                subject: options.subject,
+            })
             return { success: true, messageId: 'dev-mode' }
         }
 

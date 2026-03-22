@@ -84,7 +84,7 @@ export const vendorNavigation: NavItem[] = [
     },
     {
         title: 'Settings',
-        href: '/vendor/settings',
+        href: '/vendor/profile',
         icon: 'Settings',
         roles: ['vendor'],
     },

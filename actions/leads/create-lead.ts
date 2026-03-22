@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getUserId } from '@/lib/session'
 import { calculateLeadScore } from '@/lib/services/lead-scoring'
+import { createClient } from '@/lib/supabase/server'
 
 interface CreateLeadInput {
     name: string
@@ -47,19 +48,29 @@ export async function createLead(formData: FormData) {
         hasEngaged: false, // New lead
     })
 
-    console.log('🚀 CREATE LEAD (MOCK):', {
-        userId,
-        ...input,
-        score
-    })
-
-    // TODO: Re-enable Supabase insert later
-    /*
     const supabase = await createClient()
     const { data: lead, error } = await supabase
         .from('leads')
-        .insert({ ... })
-    */
+        .insert({
+            planner_id: userId,
+            name: input.name,
+            email: input.email,
+            phone: input.phone,
+            event_type: input.eventType,
+            event_date: input.eventDate,
+            budget: input.budget,
+            guest_count: input.guestCount,
+            source: input.source,
+            notes: input.notes,
+            score,
+            status: 'new',
+        })
+        .select()
+        .single()
+
+    if (error) {
+        return { error: error.message }
+    }
 
     revalidatePath('/planner/leads')
     redirect('/planner/leads')

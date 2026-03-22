@@ -26,7 +26,8 @@ export default function ExecutePage() {
                 } else {
                     setEvent(eventData)
                 }
-            } catch {
+            } catch (err) {
+                console.error('Failed to load event for execution:', err)
                 setError(true)
             } finally {
                 setLoading(false)

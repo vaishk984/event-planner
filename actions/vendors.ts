@@ -1,9 +1,12 @@
 'use server'
 import { getSession } from '@/lib/session';
+import { createLogger } from '@/lib/logger'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { Vendor, VendorData } from '@/src/backend/entities/Vendor'
+
+const logger = createLogger('Vendors')
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -53,7 +56,7 @@ export async function getVendors() {
             .order('company_name', { ascending: true })
 
         if (error) {
-            console.error('Error fetching vendors:', error)
+            logger.error('Failed to fetch vendors', error)
             return { error: 'Failed to fetch vendors' }
         }
 
@@ -63,7 +66,7 @@ export async function getVendors() {
         // Return plain objects for cleaner client usage
         return { data: vendors.map(v => v.toJSON()) }
     } catch (error) {
-        console.error('Unexpected error in getVendors:', error)
+        logger.error('Unexpected error in getVendors', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -118,14 +121,14 @@ export async function createVendor(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error creating vendor:', error)
+            logger.error('Failed to create vendor', error)
             return { error: 'Failed to create vendor' }
         }
 
         revalidatePath('/planner/vendors')
         return { success: true, data: Vendor.fromDatabase(data).toJSON() }
     } catch (error) {
-        console.error('Unexpected error in createVendor:', error)
+        logger.error('Unexpected error in createVendor', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -192,14 +195,14 @@ export async function updateVendor(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error updating vendor:', error)
+            logger.error('Failed to update vendor', error)
             return { error: 'Failed to update vendor' }
         }
 
         revalidatePath('/planner/vendors')
         return { success: true, data: Vendor.fromDatabase(data).toJSON() }
     } catch (error) {
-        console.error('Unexpected error in updateVendor:', error)
+        logger.error('Unexpected error in updateVendor', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -221,14 +224,14 @@ export async function deleteVendor(id: string) {
             .eq('planner_id', session?.userId) // Security check in query
 
         if (error) {
-            console.error('Error deleting vendor:', error)
+            logger.error('Failed to delete vendor', error)
             return { error: 'Failed to delete vendor' }
         }
 
         revalidatePath('/planner/vendors')
         return { success: true }
     } catch (error) {
-        console.error('Unexpected error in deleteVendor:', error)
+        logger.error('Unexpected error in deleteVendor', error)
         return { error: 'An unexpected error occurred' }
     }
 }

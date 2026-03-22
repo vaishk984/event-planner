@@ -20,7 +20,7 @@ import { PackagePanel } from '@/components/builder/package-panel'
 import { SendPanel } from '@/components/builder/send-panel'
 
 // Types
-import type { Event, Intake, Vendor, EventVendor } from '@/types/domain'
+import type { Event, Intake, Vendor, EventVendor, ProposalItem, VendorCategory } from '@/types/domain'
 import { getRequestsForEvent } from '@/actions/booking'
 import { getEvent } from '@/lib/actions/event-actions'
 import { getIntake } from '@/lib/actions/intake-actions'
@@ -36,9 +36,9 @@ interface BuilderState {
         notes: string
     }
     packages: {
-        silver: any[]
-        gold: any[]
-        platinum: any[]
+        silver: ProposalItem[]
+        gold: ProposalItem[]
+        platinum: ProposalItem[]
     }
 }
 
@@ -75,12 +75,26 @@ export default function ProposalBuilderPage() {
                 const requests = await getRequestsForEvent(eventId)
 
                 // Map BookingRequests to Vendor objects for the UI
-                const confirmedVendors: Vendor[] = requests
-                    .filter((req: any) => req.status !== 'declined' && req.status !== 'cancelled')
-                    .map((req: any) => ({
+                interface BookingRequestData {
+                    status: string
+                    vendorId: string
+                    vendorName?: string
+                    vendorCategory?: string
+                    vendorPrice?: number
+                    vendorRating?: number
+                    vendorImage?: string
+                    vendorDescription?: string
+                    budget?: number
+                    city?: string
+                    createdAt?: string
+                    updatedAt?: string
+                }
+                const confirmedVendors: Vendor[] = (requests as unknown as BookingRequestData[])
+                    .filter((req) => req.status !== 'declined' && req.status !== 'cancelled')
+                    .map((req) => ({
                         id: req.vendorId,
                         name: req.vendorName || 'Unknown Vendor',
-                        category: req.vendorCategory as any || 'other',
+                        category: (req.vendorCategory || 'venue') as VendorCategory,
                         basePrice: req.vendorPrice || req.budget || 0,
                         // Default values for required Vendor fields
                         rating: req.vendorRating || 0,
@@ -89,13 +103,13 @@ export default function ProposalBuilderPage() {
                         isVerified: false,
                         isActive: true,
                         serviceAreas: [],
-                        priceRange: 'mid',
+                        priceRange: 'mid' as const,
                         currency: 'INR',
                         images: req.vendorImage ? [req.vendorImage] : [],
                         createdAt: req.createdAt || new Date().toISOString(),
                         updatedAt: req.updatedAt || new Date().toISOString(),
                         description: req.vendorDescription || 'Assigned Vendor',
-                        phone: '', // req.vendorPhone missing in booking request join currently
+                        phone: '',
                         email: ''
                     }))
 
@@ -291,19 +305,17 @@ export default function ProposalBuilderPage() {
                         event={event}
                         packages={builderState.packages}
                         design={builderState.design}
-                        vendors={builderState.shortlist.confirmed.map((v: any) => ({
+                        vendors={builderState.shortlist.confirmed.map((v: Vendor) => ({
                             vendorId: v.id,
                             eventId: event.id,
-                            status: 'confirmed',
+                            status: 'confirmed' as const,
                             vendorCategory: v.category,
                             vendorName: v.name,
-                            // Use basePrice or price if available, ensure fallback
-                            agreedAmount: v.basePrice || v.price || 0,
+                            agreedAmount: v.basePrice || 0,
                             addedAt: new Date().toISOString(),
-                            // Optional fields to satisfy type
                             id: v.id,
                             category: v.category,
-                            price: v.basePrice || v.price || 0,
+                            price: v.basePrice || 0,
                             vendorPhone: '',
                         } as EventVendor))}
                     />

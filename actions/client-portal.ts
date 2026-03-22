@@ -3,6 +3,16 @@ import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+interface BookingWithVendor {
+    id: string
+    service: string | null
+    status: string
+    budget: number | null
+    quoted_amount: number | null
+    notes: string | null
+    vendors: { business_name?: string; rating?: number; category?: string } | { business_name?: string; rating?: number; category?: string }[] | null
+}
+
 // ============================================================================
 // TOKEN VALIDATION
 // ============================================================================
@@ -316,7 +326,7 @@ export async function sendFinalProposal(eventId: string) {
         .eq('planner_id', session?.userId)
         .single()
 
-    const newVersion = ((event as any)?.proposal_version || 0) + 1
+    const newVersion = ((event as { proposal_version?: number })?.proposal_version || 0) + 1
 
     const { error } = await supabase
         .from('events')
@@ -402,8 +412,9 @@ export async function getPublicProposalDetails(token: string) {
         'transport': 'Car',
     }
 
-    const categories = (bookings || []).map(b => {
-        const vendor = (b as any).vendors || {}
+    const categories = ((bookings || []) as BookingWithVendor[]).map((b) => {
+        const rawVendor = b.vendors
+        const vendor = Array.isArray(rawVendor) ? rawVendor[0] || {} : rawVendor || {}
         const serviceKey = (b.service || '').toLowerCase()
         const isPerPlate = serviceKey === 'catering'
         return {
@@ -459,7 +470,7 @@ export async function getPublicProposalDetails(token: string) {
 export async function updateProposalStatus(token: string, status: string, feedback?: string) {
     const supabase = await createClient()
 
-    const updateData: any = { proposal_status: status }
+    const updateData: { proposal_status: string; client_feedback?: string } = { proposal_status: status }
     if (feedback) updateData.client_feedback = feedback
 
     const { error } = await supabase
@@ -527,8 +538,9 @@ export async function getFinalProposal(token: string) {
         'makeup': 'Brush', 'mehendi': 'Brush', 'transport': 'Car',
     }
 
-    const categories = (bookings || []).map(b => {
-        const vendor = (b as any).vendors || {}
+    const categories = ((bookings || []) as BookingWithVendor[]).map((b) => {
+        const rawVendor = b.vendors
+        const vendor = Array.isArray(rawVendor) ? rawVendor[0] || {} : rawVendor || {}
         const serviceKey = (b.service || '').toLowerCase()
         const isPerPlate = serviceKey === 'catering'
         return {
@@ -575,7 +587,7 @@ export async function updateFinalProposalStatus(token: string, status: string, f
     const supabase = await createClient()
 
     const cleanToken = token.startsWith('final_') ? token.slice(6) : token
-    const updateData: any = { proposal_status: status }
+    const updateData: { proposal_status: string; client_feedback?: string } = { proposal_status: status }
     if (feedback) updateData.client_feedback = feedback
 
     const { error } = await supabase

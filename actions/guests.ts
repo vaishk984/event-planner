@@ -1,10 +1,12 @@
 'use server'
 import { getSession } from '@/lib/session';
-
+import { createLogger } from '@/lib/logger'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+
+const logger = createLogger('Guests')
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -62,7 +64,6 @@ export async function getGuests(eventId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Verify event ownership
         const { data: event, error: eventError } = await supabase
@@ -84,13 +85,13 @@ export async function getGuests(eventId: string) {
             .order('name', { ascending: true })
 
         if (error) {
-            console.error('Error fetching guests:', error)
+            logger.error('Failed to fetch guests', error)
             return { error: 'Failed to fetch guests' }
         }
 
         return { data: data as Guest[] }
     } catch (error) {
-        console.error('Unexpected error in getGuests:', error)
+        logger.error('Unexpected error in getGuests', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -106,7 +107,6 @@ export async function createGuest(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             eventId: formData.get('eventId')?.toString(),
@@ -158,14 +158,14 @@ export async function createGuest(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error creating guest:', error)
+            logger.error('Failed to create guest', error)
             return { error: 'Failed to create guest' }
         }
 
         revalidatePath(`/planner/events/${validData.eventId}/guests`)
         return { data: data as Guest, success: true }
     } catch (error) {
-        console.error('Unexpected error in createGuest:', error)
+        logger.error('Unexpected error in createGuest', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -181,7 +181,6 @@ export async function updateGuest(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             id: formData.get('id')?.toString(),
@@ -226,7 +225,7 @@ export async function updateGuest(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error updating guest:', error)
+            logger.error('Failed to update guest', error)
             return { error: 'Failed to update guest' }
         }
 
@@ -235,7 +234,7 @@ export async function updateGuest(formData: FormData) {
         }
         return { data: data as Guest, success: true }
     } catch (error) {
-        console.error('Unexpected error in updateGuest:', error)
+        logger.error('Unexpected error in updateGuest', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -251,7 +250,6 @@ export async function deleteGuest(id: string, eventId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const { error } = await supabase
             .from('guests')
@@ -259,14 +257,14 @@ export async function deleteGuest(id: string, eventId: string) {
             .eq('id', id)
 
         if (error) {
-            console.error('Error deleting guest:', error)
+            logger.error('Failed to delete guest', error)
             return { error: 'Failed to delete guest' }
         }
 
         revalidatePath(`/planner/events/${eventId}/guests`)
         return { success: true }
     } catch (error) {
-        console.error('Unexpected error in deleteGuest:', error)
+        logger.error('Unexpected error in deleteGuest', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -282,7 +280,6 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Verify event ownership ONCE
         const { data: event, error: eventError } = await supabase
@@ -320,7 +317,7 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
             const { error } = await supabase.from('guests').insert(batch)
 
             if (error) {
-                console.error('Bulk insert error:', error)
+                logger.error('Bulk guest insert failed', error, { batch: i / batchSize + 1 })
                 // Continue with other batches or stop? Let's stop and report.
                 return { error: `Failed at batch ${i / batchSize + 1}: ${error.message}` }
             }
@@ -331,7 +328,7 @@ export async function createGuestsBulk(eventId: string, guestsData: any[]) {
         return { success: true, count: successCount }
 
     } catch (error) {
-        console.error('Unexpected error in createGuestsBulk:', error)
+        logger.error('Unexpected error in createGuestsBulk', error)
         return { error: 'An unexpected error occurred' }
     }
 }

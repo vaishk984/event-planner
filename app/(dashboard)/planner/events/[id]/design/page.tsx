@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import {
 import Link from 'next/link'
 import { getEventVendors, removeVendorFromEvent } from '@/lib/actions/event-vendor-actions'
 import type { Event } from '@/types/domain'
-import { getEvent } from '@/lib/actions/event-actions'
+import { getEvent, updateEvent, approveEvent } from '@/lib/actions/event-actions'
 
 interface SelectedVendor {
     id: string
@@ -34,6 +34,7 @@ export default function EventDesignPage() {
     const [selectedVendors, setSelectedVendors] = useState<SelectedVendor[]>([])
     const [designNotes, setDesignNotes] = useState('')
     const [loading, setLoading] = useState(true)
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Load event and vendors from database
     useEffect(() => {
@@ -80,7 +81,15 @@ export default function EventDesignPage() {
     // Update notes
     const handleNotesChange = (notes: string) => {
         setDesignNotes(notes)
-        // TODO: Save to database
+        // Debounce save to prevent excessive API calls
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                await updateEvent(eventId, { notes })
+            } catch (err) {
+                console.error('Failed to save design notes:', err)
+            }
+        }, 1000)
     }
 
     // Handle remove vendor
@@ -168,10 +177,19 @@ export default function EventDesignPage() {
                         <Button
                             className="gap-2 bg-indigo-600 hover:bg-indigo-700"
                             disabled={selectedVendors.length === 0}
-                            onClick={() => {
+                            onClick={async () => {
                                 if (confirm('Are you sure you want to approve this event? This will lock the proposal.')) {
-                                    // TODO: Call server action to approve
-                                    alert('Approval coming soon!')
+                                    try {
+                                        const result = await approveEvent(eventId)
+                                        if (result.success) {
+                                            setEvent(prev => prev ? { ...prev, status: 'approved' } : prev)
+                                        } else {
+                                            alert(`Failed to approve event: ${result.error}`)
+                                        }
+                                    } catch (err) {
+                                        console.error('Error approving event:', err)
+                                        alert('An unexpected error occurred while approving the event.')
+                                    }
                                 }
                             }}
                         >

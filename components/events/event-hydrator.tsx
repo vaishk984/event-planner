@@ -15,7 +15,7 @@ function mapEventToContext(event: Event): EventData {
         // Map status safely
         status: (['requirements_captured', 'designing', 'proposal_sent', 'approved', 'in_progress', 'completed'].includes(event.status)
             ? event.status
-            : 'designing') as any,
+            : 'designing') as EventData['status'],
 
         // Reconstruct basic requirements from event flat data
         requirements: {
@@ -26,9 +26,7 @@ function mapEventToContext(event: Event): EventData {
                 guestCount: event.guestCount,
                 budget: event.budgetMax || 0
             },
-            // Other fields would need to be populated if we had them or fetched separately
-            // For now we map what we have
-        } as any,
+        } as EventData['requirements'],
 
         selectedVendors: [], // We need to fetch these if we want them, or let the page fetch them
         designNotes: event.notes || '',
@@ -39,7 +37,7 @@ function mapEventToContext(event: Event): EventData {
     }
 }
 
-export function EventHydrator({ event, vendors }: { event: Event, vendors: any[] }) {
+export function EventHydrator({ event, vendors }: { event: Event, vendors: EventData['selectedVendors'] }) {
     const { setActiveEvent, events } = useEventContext()
 
     useEffect(() => {

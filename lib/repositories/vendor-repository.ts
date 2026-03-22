@@ -46,7 +46,7 @@ class VendorRepositoryClass extends BaseRepository<Vendor> {
     }
 
     async findByCategory(category: string): Promise<Vendor[]> {
-        return this.findMany({ category: category as any });
+        return this.findMany({ category } as Partial<Vendor>);
     }
 
     async findAll(): Promise<Vendor[]> {

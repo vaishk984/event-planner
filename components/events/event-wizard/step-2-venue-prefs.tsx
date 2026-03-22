@@ -57,7 +57,7 @@ export function Step2VenuePrefs({ data, updateData }: Step2Props) {
                         return (
                             <button
                                 key={type.id}
-                                onClick={() => updateData({ type: type.id as any })}
+                                onClick={() => updateData({ type: type.id as EventPlan['venue']['type'] })}
                                 className={`p-5 rounded-xl border-2 text-center transition-all ${isSelected
                                     ? 'border-indigo-500 bg-indigo-50 shadow-md'
                                     : 'border-gray-200 hover:border-indigo-300'

@@ -69,8 +69,6 @@ export async function createEvent(formData: FormData) {
         return { error: result.error }
     }
 
-    console.log('✅ Event created successfully:', result.data.id)
-
     revalidatePath('/planner/events')
     redirect('/planner/events')
 }

@@ -60,7 +60,7 @@ export function Step3StylePrefs({ data, updateData }: Step3Props) {
                     {STYLE_PREFERENCES.map((style) => (
                         <button
                             key={style.id}
-                            onClick={() => updateData({ themeName: style.name, decorStyle: style.id as any })}
+                            onClick={() => updateData({ themeName: style.name, decorStyle: style.id as EventPlan['themeDecor']['decorStyle'] })}
                             className={`p-3 rounded-xl border-2 text-center transition-all ${data.themeName === style.name
                                 ? 'border-indigo-500 bg-indigo-50 shadow-md'
                                 : 'border-gray-200 hover:border-indigo-300'
@@ -109,7 +109,7 @@ export function Step3StylePrefs({ data, updateData }: Step3Props) {
                     {DECOR_INTENSITY.map((level) => (
                         <button
                             key={level.id}
-                            onClick={() => updateData({ decorStyle: level.id as any })}
+                            onClick={() => updateData({ decorStyle: level.id as EventPlan['themeDecor']['decorStyle'] })}
                             className={`p-3 rounded-xl border-2 text-center transition-all ${data.decorStyle === level.id
                                 ? 'border-purple-500 bg-purple-50'
                                 : 'border-gray-200 hover:border-purple-300'

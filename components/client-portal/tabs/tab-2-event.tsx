@@ -1,6 +1,6 @@
 'use client'
 
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -100,7 +100,7 @@ export function Tab2Event() {
                             return (
                                 <button
                                     key={type.id}
-                                    onClick={() => updateData('eventType', type.id as any)}
+                                    onClick={() => updateData('eventType', type.id as ClientIntakeData['eventType'])}
                                     className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${isSelected
                                         ? 'border-pink-500 bg-pink-50 text-pink-600 scale-105 shadow-lg'
                                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'

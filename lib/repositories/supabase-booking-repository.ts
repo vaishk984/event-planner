@@ -7,6 +7,35 @@
 import { SupabaseBaseRepository } from './supabase-base-repository'
 import type { ActionResult } from '@/types/domain'
 
+/** Shape of a booking row joined with events from Supabase */
+interface BookingRowWithEvents extends Record<string, unknown> {
+    events?: {
+        name?: string
+        event_date?: string
+        end_date?: string
+        city?: string
+        venue?: string
+        guest_count?: number
+    } | null
+    event_name?: string
+    event_date?: string
+    city?: string
+    venue?: string
+    guest_count?: number
+    status?: string
+    quoted_amount?: number
+}
+
+/** Shape of a status-only row from Supabase */
+interface StatusRow {
+    status: string
+}
+
+/** Shape of an earnings-only row from Supabase */
+interface EarningsRow {
+    quoted_amount: number | null
+}
+
 // Booking status type
 export type BookingStatus =
     | 'pending'
@@ -63,8 +92,6 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
     async findByVendorId(vendorId: string): Promise<BookingRequest[]> {
         const supabase = await this.getClient()
 
-        console.log('🔍 [BookingRepository] Fetching bookings for vendor:', vendorId)
-
         const { data, error } = await supabase
             .from(this.tableName)
             .select(`
@@ -86,12 +113,9 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
             return []
         }
 
-        console.log('📊 [BookingRepository] Raw data from DB:', data)
-        console.log('📊 [BookingRepository] Row count:', data?.length)
-
         // Transform to include event details
-        const transformed = (data || []).map((row: any) => {
-            const booking = this.fromDb(row) as any
+        const transformed = (data || []).map((row: BookingRowWithEvents) => {
+            const booking = this.fromDb(row as Record<string, unknown>)
             return {
                 ...booking,
                 eventName: row.events?.name || row.event_name || 'Unknown Event',
@@ -103,7 +127,6 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
             }
         })
 
-        console.log('✅ [BookingRepository] Transformed bookings:', transformed)
         return transformed
     }
 
@@ -113,8 +136,6 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
      */
     async findPendingByVendorId(vendorId: string): Promise<BookingRequest[]> {
         const supabase = await this.getClient()
-
-        console.log('🔍 [BookingRepository] Fetching PENDING bookings for vendor:', vendorId)
 
         const { data, error } = await supabase
             .from(this.tableName)
@@ -138,11 +159,9 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
             return []
         }
 
-        console.log('📊 [BookingRepository] Pending bookings count:', data?.length)
-
         // Transform to include event details
-        return (data || []).map((row: any) => {
-            const booking = this.fromDb(row) as any
+        return (data || []).map((row: BookingRowWithEvents) => {
+            const booking = this.fromDb(row as Record<string, unknown>)
             return {
                 ...booking,
                 eventName: row.events?.name || row.event_name || 'Unknown Event',
@@ -182,15 +201,16 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
             return null
         }
 
-        const booking = this.fromDb(data) as any
+        const row = data as BookingRowWithEvents
+        const booking = this.fromDb(data as Record<string, unknown>)
         return {
             ...booking,
-            eventName: data.events?.name || data.event_name || 'Unknown Event',
-            eventDate: data.events?.event_date || data.event_date || '',
-            eventEndDate: data.events?.end_date || '', // Map end_date
-            city: data.events?.city || data.city || '',
-            venue: data.events?.venue || data.venue || 'TBD',
-            guestCount: data.events?.guest_count || data.guest_count || 0,
+            eventName: row.events?.name || row.event_name || 'Unknown Event',
+            eventDate: row.events?.event_date || row.event_date || '',
+            eventEndDate: row.events?.end_date || '', // Map end_date
+            city: row.events?.city || row.city || '',
+            venue: row.events?.venue || row.venue || 'TBD',
+            guestCount: row.events?.guest_count || row.guest_count || 0,
         }
     }
 
@@ -268,7 +288,7 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
             .eq('vendor_id', vendorId)
 
         if (statusData) {
-            statusData.forEach((row: any) => {
+            statusData.forEach((row: StatusRow) => {
                 if (row.status === 'pending' || row.status === 'draft' || row.status === 'quote_requested') {
                     stats.pending++
                 } else if (row.status === 'accepted' || row.status === 'confirmed' || row.status === 'quoted') {
@@ -288,7 +308,7 @@ class SupabaseBookingRepositoryClass extends SupabaseBaseRepository<BookingReque
 
         if (earningsData) {
             stats.totalEarnings = earningsData.reduce(
-                (sum: number, r: any) => sum + (r.quoted_amount || 0),
+                (sum: number, r: EarningsRow) => sum + (r.quoted_amount || 0),
                 0
             )
         }

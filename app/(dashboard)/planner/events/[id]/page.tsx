@@ -279,7 +279,7 @@ export default function EventOverviewPage() {
                             budgetMax={event.budgetMax || 0}
                             guestCount={event.guestCount || 0}
                             onPassed={() => {
-                                console.log('Passed feasibility check')
+                                // Feasibility check passed — no action needed
                             }}
                         />
                     </div>

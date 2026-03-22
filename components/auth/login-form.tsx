@@ -1,11 +1,29 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Loader2 } from 'lucide-react'
 
 export function LoginForm({ errorMessage }: { errorMessage?: string | null }) {
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     return (
-        <form action="/api/auth/login" method="POST" className="space-y-4">
+        <form
+            action="/api/auth/login"
+            method="POST"
+            className="space-y-4"
+            onSubmit={() => setIsSubmitting(true)}
+        >
+            {errorMessage && (
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <p className="font-medium">Login failed</p>
+                    <p className="mt-1">{errorMessage}</p>
+                </div>
+            )}
+
             <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -15,6 +33,8 @@ export function LoginForm({ errorMessage }: { errorMessage?: string | null }) {
                     placeholder="you@example.com"
                     required
                     autoComplete="email"
+                    readOnly={isSubmitting}
+                    className={isSubmitting ? 'opacity-50' : ''}
                 />
             </div>
 
@@ -27,17 +47,20 @@ export function LoginForm({ errorMessage }: { errorMessage?: string | null }) {
                     placeholder="********"
                     required
                     autoComplete="current-password"
+                    readOnly={isSubmitting}
+                    className={isSubmitting ? 'opacity-50' : ''}
                 />
             </div>
 
-            {errorMessage && (
-                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                    {errorMessage}
-                </div>
-            )}
-
-            <Button type="submit" className="w-full">
-                Sign In
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                    <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Signing in...
+                    </>
+                ) : (
+                    'Sign In'
+                )}
             </Button>
 
             <div className="flex justify-between text-sm text-muted-foreground">

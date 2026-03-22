@@ -8,6 +8,29 @@
 import { SupabaseBaseRepository } from './supabase-base-repository'
 import type { EventVendor, VendorCategory, ActionResult } from '@/types/domain'
 
+/** Shape of an assignment row joined with vendor from Supabase */
+interface AssignmentRowWithVendor extends Record<string, unknown> {
+    vendor?: {
+        company_name?: string
+        category?: string
+        phone?: string
+        rating?: number
+    } | null
+}
+
+/** Shape of a booking row joined with vendors from Supabase */
+interface BookingRowWithVendors {
+    id: string
+    vendor_id: string
+    service: string
+    quoted_amount?: number
+    budget?: number
+    agreed_amount?: number
+    status: string
+    created_at: string
+    vendors?: Record<string, unknown> | Record<string, unknown>[] | null
+}
+
 class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVendor> {
     protected tableName = 'vendor_assignments' // Mapping to actual DB table
     protected entityName = 'event-vendor'
@@ -17,8 +40,6 @@ class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVen
      */
     async findByEventId(eventId: string): Promise<EventVendor[]> {
         const supabase = await this.getClient()
-        console.log(`[Repository] Finding vendors for event: ${eventId}`)
-
         // 1. Fetch from legacy vendor_assignments
         const { data: assignmentData, error: assignmentError } = await supabase
             .from(this.tableName)
@@ -37,8 +58,6 @@ class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVen
             console.error('Error fetching event vendors:', assignmentError)
             return []
         }
-        console.log(`[Repository] Found ${assignmentData?.length || 0} assignments (Design Tab)`)
-
         // 2. Fetch from new booking_requests (Assignments via Vendors tab)
         const { data: bookingData, error: bookingError } = await supabase
             .from('booking_requests')
@@ -64,11 +83,9 @@ class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVen
         if (bookingError) {
             console.error('Error fetching booking requests:', bookingError)
         }
-        console.log(`[Repository] Found ${bookingData?.length || 0} booking requests (Vendor Tab)`)
-
         // 3. Map assignments to EventVendor
-        const assignments: EventVendor[] = assignmentData.map((row: any) => {
-            const base = this.fromDb(row) as any
+        const assignments: EventVendor[] = assignmentData.map((row: AssignmentRowWithVendor) => {
+            const base = this.fromDb(row as Record<string, unknown>)
             return {
                 ...base,
                 vendorName: row.vendor?.company_name || 'Unknown Vendor',
@@ -79,20 +96,23 @@ class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVen
         })
 
         // 4. Map bookings to EventVendor
-        const bookings: EventVendor[] = (bookingData || []).map((row: any) => ({
-            id: row.id,
-            eventId: eventId,
-            vendorId: row.vendor_id,
-            category: row.service,
-            status: row.status === 'accepted' || row.status === 'confirmed' ? 'confirmed' : 'contacted',
-            price: row.agreed_amount || row.quoted_amount || row.budget || 0,
-            agreedAmount: row.agreed_amount || row.quoted_amount || row.budget || 0,
-            addedAt: row.created_at,
-            vendorName: row.vendors?.company_name || 'Unknown Vendor',
-            vendorCategory: row.vendors?.category || row.service,
-            vendorPhone: row.vendors?.phone,
-            vendorRating: row.vendors?.rating || 0
-        }))
+        const bookings: EventVendor[] = (bookingData || []).map((row: BookingRowWithVendors) => {
+            const vendor = Array.isArray(row.vendors) ? row.vendors[0] : row.vendors
+            return {
+                id: row.id,
+                eventId: eventId,
+                vendorId: row.vendor_id,
+                category: row.service as VendorCategory,
+                status: (row.status === 'accepted' || row.status === 'confirmed' ? 'confirmed' : 'contacted') as EventVendor['status'],
+                price: row.agreed_amount || row.quoted_amount || row.budget || 0,
+                agreedAmount: row.agreed_amount || row.quoted_amount || row.budget || 0,
+                addedAt: row.created_at,
+                vendorName: (vendor?.company_name as string) || 'Unknown Vendor',
+                vendorCategory: (vendor?.category as string) || row.service,
+                vendorPhone: vendor?.phone as string | undefined,
+                vendorRating: (vendor?.rating as number) || 0
+            }
+        })
 
         // 5. Merge lists (prioritize bookings if duplicate vendor)
         const vendorMap = new Map<string, EventVendor>()
@@ -102,8 +122,6 @@ class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVen
 
         // Add bookings (overwriting if exists, assumming booking is more recent source of truth for these stats)
         bookings.forEach(v => vendorMap.set(v.vendorId, v))
-
-        console.log(`[Repository] Merged total unique vendors: ${vendorMap.size}`)
 
         return Array.from(vendorMap.values())
     }
@@ -158,7 +176,7 @@ class SupabaseEventVendorRepositoryClass extends SupabaseBaseRepository<EventVen
             // created_at handles timestamp
         }
 
-        return this.create(eventVendor as any)
+        return this.create(eventVendor as Omit<EventVendor, 'id' | 'createdAt' | 'updatedAt'>)
     }
 
     /**

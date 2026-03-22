@@ -142,7 +142,7 @@ export function AdminLayoutWrapper({
                             </div>
                             <div className="text-sm">
                                 <p className="font-medium">Super Admin</p>
-                                <p className="text-gray-500 text-xs">admin@test.com</p>
+                                <p className="text-gray-500 text-xs">Admin</p>
                             </div>
                         </div>
                     </div>

@@ -68,7 +68,7 @@ class SupabaseFunctionRepositoryClass extends SupabaseBaseRepository<EventFuncti
             return { success: false, error: 'Function not found', code: 'NOT_FOUND' }
         }
 
-        const { id: _, createdAt, updatedAt, ...functionData } = original as any
+        const { id: _, createdAt, updatedAt, ...functionData } = original
 
         return this.create({
             ...functionData,

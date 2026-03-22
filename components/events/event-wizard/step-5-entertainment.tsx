@@ -35,14 +35,14 @@ export function Step5Entertainment({ data, updateData }: Step5Props) {
 
     const selectEntertainment = (type: typeof ENTERTAINMENT_TYPES[0]) => {
         updateData({
-            entertainmentType: type.id as any,
+            entertainmentType: type.id as EventPlan['entertainment']['entertainmentType'],
             entertainmentCost: type.defaultCost
         })
     }
 
     const selectPhotography = (pkg: typeof PHOTOGRAPHY_PACKAGES[0]) => {
         updateData({
-            photographyPackage: pkg.id as any,
+            photographyPackage: pkg.id as EventPlan['entertainment']['photographyPackage'],
             photographyCost: pkg.price
         })
     }

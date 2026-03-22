@@ -1,6 +1,6 @@
 'use client'
 
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -100,7 +100,7 @@ export function Tab1Start() {
                             return (
                                 <button
                                     key={source.id}
-                                    onClick={() => updateData('source', source.id as any)}
+                                    onClick={() => updateData('source', source.id as ClientIntakeData['source'])}
                                     className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${isSelected
                                         ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
                                         : 'border-gray-200 hover:border-gray-300'

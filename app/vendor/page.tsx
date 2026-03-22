@@ -18,19 +18,7 @@ import {
     declineBookingRequest
 } from '@/lib/actions/vendor-actions'
 import type { Vendor } from '@/types/domain'
-
-interface BookingRequest {
-    id: string
-    eventName: string
-    eventDate: string
-    city: string
-    venue: string
-    guestCount: number
-    service: string
-    budget: number
-    status: 'pending' | 'accepted' | 'declined' | 'completed' | 'draft' | 'quote_requested'
-    createdAt: string
-}
+import type { BookingRequest } from '@/lib/repositories/supabase-booking-repository'
 
 interface DashboardStats {
     pending: number
@@ -55,23 +43,15 @@ export default function VendorDashboard() {
         setLoading(true)
         setError(null)
         try {
-            console.log('🔍 [VendorDashboard] Loading vendor data...')
             const [profileData, statsData, requestsData] = await Promise.all([
                 getVendorProfile(),
                 getVendorDashboardStats(),
                 getVendorBookingRequests()
             ])
-            console.log('✅ [VendorDashboard] Profile loaded:', profileData)
-            console.log('📊 [VendorDashboard] Stats loaded:', statsData)
-            console.log('📋 [VendorDashboard] Raw requests data:', requestsData)
-            console.log('📋 [VendorDashboard] Requests count:', requestsData?.length)
-            console.log('📋 [VendorDashboard] Requests statuses:', requestsData?.map((r: any) => r.status))
 
             setVendor(profileData)
             setStats(statsData)
-            setRequests(requestsData as any || [])
-
-            console.log('🎯 [VendorDashboard] State updated')
+            setRequests(requestsData || [])
         } catch (error) {
             console.error('❌ [VendorDashboard] Failed to load vendor data:', error)
             setError(error instanceof Error ? error.message : 'Failed to load data')
@@ -93,11 +73,9 @@ export default function VendorDashboard() {
     }
 
     const pendingRequests = requests.filter(r => {
-        const isPending = r.status === 'pending' || r.status === 'draft' || r.status === 'quote_requested'
-        console.log(`🔍 [VendorDashboard] Filtering request ${r.id}: status="${r.status}", isPending=${isPending}`)
-        return isPending
+        const s = r.status as string
+        return s === 'pending' || s === 'draft' || s === 'quote_requested'
     })
-    console.log(`📊 [VendorDashboard] Total requests: ${requests.length}, Pending: ${pendingRequests.length}`)
 
     const confirmedRequests = requests.filter(r => r.status === 'accepted')
 

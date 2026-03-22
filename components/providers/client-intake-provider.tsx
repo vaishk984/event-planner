@@ -373,15 +373,11 @@ export function ClientIntakeProvider({ children, token, plannerId }: { children:
                 submittedAt,
             }
 
-            const result = await saveClientSubmission(intakeData as any)
-            if (result.success) {
-                console.log('Intake saved:', result.data)
-            } else {
+            const result = await saveClientSubmission(intakeData as Partial<import('@/types/domain').Intake>)
+            if (!result.success) {
                 console.error('Failed to save intake:', result.error)
             }
         }
-
-        console.log('Intake submitted:', data)
     }
 
     const resetIntake = () => {

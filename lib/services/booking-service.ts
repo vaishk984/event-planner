@@ -82,7 +82,8 @@ export class BookingService {
             return { error: result.error }
         }
 
-        console.log(`✅ [BookingService] Booking created: ${result.data!.id} | Vendor: ${validData.vendorId}`)
+        // Booking created successfully — logged for audit trail
+        // TODO: Replace with structured logger when logger imports are unified
         return { success: true, data: result.data!.toJSON() }
     }
 

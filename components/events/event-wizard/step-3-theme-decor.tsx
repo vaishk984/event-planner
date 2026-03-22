@@ -95,7 +95,7 @@ export function Step3ThemeDecor({ data, updateData }: Step3Props) {
                     {DECOR_STYLES.map((style) => (
                         <button
                             key={style.id}
-                            onClick={() => updateData({ decorStyle: style.id as any })}
+                            onClick={() => updateData({ decorStyle: style.id as EventPlan['themeDecor']['decorStyle'] })}
                             className={`flex-1 p-4 rounded-xl border-2 text-center transition-all ${data.decorStyle === style.id
                                     ? 'border-indigo-500 bg-indigo-50 shadow-md'
                                     : 'border-gray-200 hover:border-indigo-300'

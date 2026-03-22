@@ -15,19 +15,20 @@ const API_BASE = '/api/v1';
  */
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<ActionResult<T>> {
     try {
-        // Dynamic host detection
+        // Dynamic host detection — works on both local dev and Vercel
         const headersList = await headers();
-        const host = headersList.get('host') || 'localhost:3000';
-        const protocol = host.includes('localhost') ? 'http' : 'https';
+        const host = headersList.get('host') || process.env.VERCEL_URL || 'localhost:3000';
+        const forwardedProto = headersList.get('x-forwarded-proto');
+        const protocol = forwardedProto || (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
         const baseUrl = `${protocol}://${host}`;
 
-        // Merge headers (cookies are often needed for auth)
+        // Merge headers (cookies are needed for auth)
         const requestHeaders = new Headers(options?.headers);
         if (!requestHeaders.has('Content-Type')) {
             requestHeaders.set('Content-Type', 'application/json');
         }
 
-        // Forward cookies if available and not already set
+        // Forward cookies so auth works in Server Actions
         const cookieHeader = headersList.get('cookie');
         if (cookieHeader && !requestHeaders.has('Cookie')) {
             requestHeaders.set('Cookie', cookieHeader);
@@ -38,15 +39,23 @@ export async function apiCall<T>(url: string, options?: RequestInit): Promise<Ac
             headers: requestHeaders,
         });
 
-        const data = await res.json();
-
-        if (!res.ok) {
-            return { success: false, error: data.error || 'Request failed' };
+        let data: Record<string, unknown>;
+        try {
+            data = await res.json();
+        } catch {
+            return { success: false, error: `Server returned ${res.status} (non-JSON response)` };
         }
 
-        return { success: true, data: data.data || data };
+        if (!res.ok) {
+            return { success: false, error: (data.error as string) || 'Request failed' };
+        }
+
+        return { success: true, data: (data.data || data) as T };
     } catch (error) {
-        console.error(`API Call Error (${url}):`, error);
-        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        if (process.env.NODE_ENV === 'development') {
+            console.error(`API Call Error (${url}):`, error);
+        }
+        return { success: false, error: message };
     }
 }

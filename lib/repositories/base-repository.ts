@@ -22,7 +22,8 @@ export abstract class BaseRepository<T extends { id: string }> {
         if (!stored) return [];
         try {
             return JSON.parse(stored) as T[];
-        } catch {
+        } catch (err) {
+            console.error(`[BaseRepository] Failed to parse stored ${this.entityName} data:`, err);
             return [];
         }
     }
@@ -59,7 +60,7 @@ export abstract class BaseRepository<T extends { id: string }> {
         if (filter) {
             items = items.filter(item => {
                 return Object.entries(filter).every(([key, value]) => {
-                    return (item as any)[key] === value;
+                    return (item as Record<string, unknown>)[key] === value;
                 });
             });
         }

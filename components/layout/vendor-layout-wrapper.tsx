@@ -141,7 +141,7 @@ export function VendorLayoutWrapper({
 
                     <div className="flex gap-2">
                         <Link
-                            href="/vendor/settings"
+                            href="/vendor/profile"
                             className={cn(
                                 "flex items-center gap-2 flex-1 px-3 py-2 text-sm text-gray-500 hover:bg-slate-100 rounded-lg transition-colors",
                                 isCollapsed && "justify-center px-2"

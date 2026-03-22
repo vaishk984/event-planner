@@ -127,6 +127,7 @@ export function DashboardWrapper({ children, userEmail = 'planner@example.com', 
                                 key={item.href}
                                 href={item.href}
                                 prefetch={false}
+                                onClick={() => setIsMobileMenuOpen(false)}
                                 className={cn(
                                     "flex items-center px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden whitespace-nowrap",
                                     isActive
@@ -176,6 +177,7 @@ export function DashboardWrapper({ children, userEmail = 'planner@example.com', 
 
                     <Link
                         href="/logout"
+                        onClick={() => setIsMobileMenuOpen(false)}
                         className={cn(
                             "flex items-center gap-2 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50 rounded-lg transition-colors overflow-hidden whitespace-nowrap",
                             isCollapsed && "justify-center px-2"

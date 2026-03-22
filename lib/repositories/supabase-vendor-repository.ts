@@ -17,9 +17,9 @@ class SupabaseVendorRepositoryClass extends SupabaseBaseRepository<Vendor> {
     /**
      * Map DB row to Domain entity
      */
-    protected fromDb(row: any): Vendor {
-        if (!row) return row
-        const obj = super.fromDb(row) as any
+    protected fromDb(row: Record<string, unknown>): Vendor {
+        if (!row) return row as unknown as Vendor
+        const obj = super.fromDb(row) as unknown as Record<string, unknown>
 
         // Map fields
         return {
@@ -34,7 +34,7 @@ class SupabaseVendorRepositoryClass extends SupabaseBaseRepository<Vendor> {
             currency: obj.currency || 'INR',
             serviceAreas: obj.serviceAreas || [],
             imageUrl: obj.imageUrl || '', // Map image_url (snake_case) -> imageUrl (camelCase)
-            images: obj.images || (obj.imageUrl ? [obj.imageUrl] : []),
+            images: obj.images || (obj.imageUrl ? [obj.imageUrl as string] : []),
             isVerified: obj.isVerified || false,
             // Contact fields from DB
             email: obj.email || '',
@@ -45,13 +45,13 @@ class SupabaseVendorRepositoryClass extends SupabaseBaseRepository<Vendor> {
             instagram: obj.instagram || '',
             paymentDetails: obj.paymentDetails || obj.payment_details || {},
             portfolio: obj.portfolioUrls || obj.portfolio_urls || []
-        } as Vendor
+        } as unknown as Vendor
     }
 
     /**
      * Map Domain entity to DB row
      */
-    protected toDb(entity: Partial<Vendor>): any {
+    protected toDb(entity: Partial<Vendor>): Record<string, unknown> {
         const row = super.toDb(entity)
 
         // Custom mapping for complex fields

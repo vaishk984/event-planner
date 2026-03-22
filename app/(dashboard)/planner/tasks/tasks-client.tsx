@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { KanbanBoard } from "@/components/tasks/kanban-board"
-import { Task, TaskStatus } from "@/lib/types/task"
+import { Task, TaskStatus, TaskPriority } from "@/lib/types/task"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -101,8 +101,8 @@ function CreateTaskDialog({
     onClose: () => void
     onCreated: (task: Task) => void
 }) {
-    const [events, setEvents] = useState<any[]>([])
-    const [vendors, setVendors] = useState<any[]>([])
+    const [events, setEvents] = useState<{ id: string; name: string }[]>([])
+    const [vendors, setVendors] = useState<{ id: string; name: string }[]>([])
     const [selectedEventId, setSelectedEventId] = useState('')
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
@@ -140,12 +140,16 @@ function CreateTaskDialog({
             .eq('event_id', eventId)
             .in('status', ['accepted', 'confirmed'])
 
-        const vendorList = (bookings || [])
-            .filter((b: any) => b.vendors)
-            .map((b: any) => ({
-                id: b.vendors.id,
-                name: b.vendors.company_name
-            }))
+        interface BookingWithVendor {
+            vendor_id: string
+            vendors: { id: string; company_name: string } | { id: string; company_name: string }[] | null
+        }
+        const vendorList = ((bookings || []) as BookingWithVendor[])
+            .filter((b) => b.vendors)
+            .map((b) => {
+                const v = Array.isArray(b.vendors) ? b.vendors[0] : b.vendors!
+                return { id: v.id, name: v.company_name }
+            })
 
         setVendors(vendorList)
     }
@@ -181,7 +185,7 @@ function CreateTaskDialog({
                 title: title.trim(),
                 description: description.trim() || undefined,
                 status: 'pending' as TaskStatus,
-                priority: priority as any,
+                priority: priority as TaskPriority,
                 dueDate: dueDate || undefined,
                 assignee: vendorName,
                 assigneeType: vendorId ? 'vendor' : 'planner',

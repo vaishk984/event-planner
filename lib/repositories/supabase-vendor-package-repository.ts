@@ -14,9 +14,9 @@ class SupabaseVendorPackageRepositoryClass extends SupabaseBaseRepository<Vendor
     /**
      * Map DB row to Domain entity
      */
-    protected fromDb(row: any): VendorPackage {
-        if (!row) return row
-        const obj = super.fromDb(row) as any
+    protected fromDb(row: Record<string, unknown>): VendorPackage {
+        if (!row) return row as unknown as VendorPackage
+        const obj = super.fromDb(row) as unknown as Record<string, unknown>
 
         return {
             ...obj,
@@ -30,7 +30,7 @@ class SupabaseVendorPackageRepositoryClass extends SupabaseBaseRepository<Vendor
     /**
      * Map Domain entity to DB row
      */
-    protected toDb(entity: Partial<VendorPackage>): any {
+    protected toDb(entity: Partial<VendorPackage>): Record<string, unknown> {
         const row = super.toDb(entity)
 
         if (entity.vendorId) {

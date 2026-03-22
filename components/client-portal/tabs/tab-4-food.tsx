@@ -1,6 +1,6 @@
 'use client'
 
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { CategoryShowroom } from '@/components/client-portal/category-showroom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -132,7 +132,7 @@ export function Tab4Food() {
                             {SERVING_STYLES.map((style) => (
                                 <button
                                     key={style.id}
-                                    onClick={() => updateFood({ servingStyle: style.id as any })}
+                                    onClick={() => updateFood({ servingStyle: style.id as ClientIntakeData['food']['servingStyle'] })}
                                     className={`p-3 rounded-lg border-2 text-center transition-all ${data.food.servingStyle === style.id
                                         ? 'border-amber-500 bg-amber-50'
                                         : 'border-gray-200 hover:border-amber-300'
@@ -152,7 +152,7 @@ export function Tab4Food() {
                             {BUDGET_LEVELS.map((level) => (
                                 <button
                                     key={level.id}
-                                    onClick={() => updateFood({ budgetLevel: level.id as any })}
+                                    onClick={() => updateFood({ budgetLevel: level.id as ClientIntakeData['food']['budgetLevel'] })}
                                     className={`w-full p-3 rounded-lg border-2 text-left transition-all ${data.food.budgetLevel === level.id
                                         ? 'border-orange-500 bg-orange-50'
                                         : 'border-gray-200 hover:border-orange-300'

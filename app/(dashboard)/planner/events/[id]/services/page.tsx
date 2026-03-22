@@ -90,7 +90,7 @@ export default function ServicesPage() {
                         vendor: {
                             id: ev.vendorId,
                             name: ev.vendorName || 'Unknown',
-                            rating: (ev as any).vendorRating || 0,
+                            rating: 0,
                             price: ev.agreedAmount || 0
                         }
                     })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -193,7 +193,7 @@ export function Tab2bVenuePhotos() {
                             {['indoor', 'outdoor', 'both'].map((type) => (
                                 <button
                                     key={type}
-                                    onClick={() => updatePersonalVenue({ type: type as any })}
+                                    onClick={() => updatePersonalVenue({ type: type as ClientIntakeData['personalVenue']['type'] })}
                                     className={`flex-1 py-2 px-3 rounded-lg border text-sm capitalize ${data.personalVenue.type === type
                                         ? 'border-green-500 bg-green-50 text-green-700'
                                         : 'border-gray-200'
@@ -219,7 +219,7 @@ export function Tab2bVenuePhotos() {
                         ].map((option) => (
                             <button
                                 key={option.id}
-                                onClick={() => updatePersonalVenue({ parking: option.id as any })}
+                                onClick={() => updatePersonalVenue({ parking: option.id as ClientIntakeData['personalVenue']['parking'] })}
                                 className={`flex-1 py-2 px-3 rounded-lg border text-sm ${data.personalVenue.parking === option.id
                                     ? 'border-green-500 bg-green-50 text-green-700'
                                     : 'border-gray-200'

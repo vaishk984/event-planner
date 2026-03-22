@@ -112,8 +112,6 @@ export function VendorPanel({ event, shortlist, onUpdateShortlist, onNext }: Ven
                     status: 'pending'
                 })
 
-                console.log('[VendorPanel] createBookingRequest result:', result)
-
                 if (result.error) {
                     toast.error(`Failed to save: ${result.error}`)
                     console.error(result.error)

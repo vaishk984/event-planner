@@ -7,9 +7,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-
-const API_BASE = '/api/v1';
+import { apiCall, type ActionResult } from './shared-utils';
 
 // ============================================
 // TYPES
@@ -38,41 +36,7 @@ export interface Attachment {
     size: number;
 }
 
-export interface ActionResult<T> {
-    success: boolean;
-    data?: T;
-    error?: string;
-}
-
-// ============================================
-// HELPER
-// ============================================
-
-async function apiCall<T>(url: string, options?: RequestInit): Promise<ActionResult<T>> {
-    try {
-        const cookieStore = await cookies();
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json',
-            'Cookie': cookieStore.toString(),
-            ...options?.headers,
-        };
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}${API_BASE}${url}`, {
-            ...options,
-            headers,
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            return { success: false, error: data.error || 'Request failed' };
-        }
-
-        return { success: true, data: data.data || data };
-    } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-}
+export type { ActionResult } from './shared-utils';
 
 // ============================================
 // QUERY ACTIONS

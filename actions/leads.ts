@@ -1,10 +1,12 @@
 'use server'
 import { getSession } from '@/lib/session';
-
+import { createLogger } from '@/lib/logger'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+
+const logger = createLogger('Leads')
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -62,7 +64,6 @@ export async function getLeads() {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Fetch leads (RLS automatically filters by planner_id)
         const { data, error } = await supabase
@@ -74,13 +75,13 @@ export async function getLeads() {
             .order('created_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching leads:', error)
+            logger.error('Failed to fetch leads', error)
             return { error: 'Failed to fetch leads' }
         }
 
         return { data: data as Lead[] }
     } catch (error) {
-        console.error('Unexpected error in getLeads:', error)
+        logger.error('Unexpected error in getLeads', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -96,7 +97,6 @@ export async function getLead(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const { data, error } = await supabase
             .from('clients')
@@ -107,13 +107,13 @@ export async function getLead(id: string) {
             .single()
 
         if (error) {
-            console.error('Error fetching lead:', error)
+            logger.error('Failed to fetch lead', error)
             return { error: 'Lead not found' }
         }
 
         return { data: data as Lead }
     } catch (error) {
-        console.error('Unexpected error in getLead:', error)
+        logger.error('Unexpected error in getLead', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -130,7 +130,6 @@ export async function createLead(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Parse and validate input
         const rawData = {
@@ -178,14 +177,14 @@ export async function createLead(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error creating lead:', error)
+            logger.error('Failed to create lead', error)
             return { error: 'Failed to create lead' }
         }
 
         revalidatePath('/planner/leads')
         return { data: data as Lead, success: true }
     } catch (error) {
-        console.error('Unexpected error in createLead:', error)
+        logger.error('Unexpected error in createLead', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -201,7 +200,6 @@ export async function updateLead(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             id: formData.get('id') as string,
@@ -244,14 +242,14 @@ export async function updateLead(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error updating lead:', error)
+            logger.error('Failed to update lead', error)
             return { error: 'Failed to update lead' }
         }
 
         revalidatePath('/planner/leads')
         return { data: data as Lead, success: true }
     } catch (error) {
-        console.error('Unexpected error in updateLead:', error)
+        logger.error('Unexpected error in updateLead', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -267,7 +265,6 @@ export async function deleteLead(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const { error } = await supabase
             .from('clients')
@@ -276,14 +273,14 @@ export async function deleteLead(id: string) {
             .eq('planner_id', session?.userId)
 
         if (error) {
-            console.error('Error deleting lead:', error)
+            logger.error('Failed to delete lead', error)
             return { error: 'Failed to delete lead' }
         }
 
         revalidatePath('/planner/leads')
         return { success: true }
     } catch (error) {
-        console.error('Unexpected error in deleteLead:', error)
+        logger.error('Unexpected error in deleteLead', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -299,7 +296,6 @@ export async function convertLeadToEvent(leadId: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Get lead details
         const { data: lead, error: leadError } = await supabase
@@ -328,7 +324,7 @@ export async function convertLeadToEvent(leadId: string) {
             .single()
 
         if (eventError) {
-            console.error('Error creating event:', eventError)
+            logger.error('Failed to create event from lead', eventError)
             return { error: 'Failed to create event' }
         }
 
@@ -344,7 +340,7 @@ export async function convertLeadToEvent(leadId: string) {
 
         return { data: event, success: true }
     } catch (error) {
-        console.error('Unexpected error in convertLeadToEvent:', error)
+        logger.error('Unexpected error in convertLeadToEvent', error)
         return { error: 'An unexpected error occurred' }
     }
 }

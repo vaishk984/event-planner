@@ -70,17 +70,17 @@ export async function createIntake(data: Partial<Intake>): Promise<ActionResult<
         guestCount: data.guestCount || 100,
         budgetMin: data.budgetMin || 0,
         budgetMax: data.budgetMax || 0,
-        personalVenue: data.personalVenue || {},
-        food: data.food || {},
-        decor: data.decor || {},
-        entertainment: data.entertainment || {},
-        photography: data.photography || {},
-        services: data.services || {},
+        personalVenue: data.personalVenue || {} as Intake['personalVenue'],
+        food: data.food || {} as Intake['food'],
+        decor: data.decor || {} as Intake['decor'],
+        entertainment: data.entertainment || {} as Intake['entertainment'],
+        photography: data.photography || {} as Intake['photography'],
+        services: data.services || {} as Intake['services'],
         likedVendors: data.likedVendors || [],
         specialRequests: data.specialRequests || '',
     }
 
-    const result = await supabaseIntakeRepository.create(intakeData as any)
+    const result = await supabaseIntakeRepository.create(intakeData as unknown as Omit<Intake, 'id' | 'createdAt' | 'updatedAt'>)
 
     if (result.success) {
         revalidatePath('/planner/events')
@@ -148,7 +148,7 @@ export async function convertIntakeToEvent(intakeId: string): Promise<ActionResu
         submissionId: intake.id,
     }
 
-    const eventResult = await supabaseEventRepository.create(eventData as any)
+    const eventResult = await supabaseEventRepository.create(eventData as unknown as Omit<Event, 'id' | 'createdAt' | 'updatedAt'>)
 
     if (eventResult.success && eventResult.data) {
         await supabaseIntakeRepository.markConverted(intakeId, eventResult.data.id)
@@ -166,7 +166,7 @@ export async function submitIntake(id: string): Promise<ActionResult<Intake>> {
     const result = await supabaseIntakeRepository.update(id, {
         status: 'submitted',
         submittedAt: new Date().toISOString(),
-    } as Partial<Intake>)
+    } as unknown as Omit<Intake, 'id' | 'createdAt' | 'updatedAt'>)
 
     if (result.success) {
         revalidatePath('/planner/events')
@@ -201,14 +201,12 @@ export async function saveClientSubmission(data: Partial<Intake>): Promise<Actio
     if (data.token) {
         const existing = await supabaseIntakeRepository.findByToken(data.token)
         if (existing) {
+            const { id: _removedId, ...updateFields } = data
             const updateData = {
-                ...data,
+                ...updateFields,
                 status: 'submitted' as const,
                 submittedAt: new Date().toISOString(),
-                // Preserve existing plannerId
             }
-            // Remove ID if present in data
-            delete (updateData as any).id
 
             const result = await supabaseIntakeRepository.update(existing.id, updateData)
 
@@ -235,10 +233,10 @@ export async function saveClientSubmission(data: Partial<Intake>): Promise<Actio
         status: 'submitted' as const,
         submittedAt: new Date().toISOString(),
         // Ensure token is generated if not provided
-        token: data.token || (supabaseIntakeRepository as any).generateAccessToken()
+        token: data.token || crypto.randomUUID()
     }
 
-    const result = await supabaseIntakeRepository.create(intakeData as any)
+    const result = await supabaseIntakeRepository.create(intakeData as unknown as Omit<Intake, 'id' | 'createdAt' | 'updatedAt'>)
 
     if (result.success) {
         revalidatePath('/planner/events')

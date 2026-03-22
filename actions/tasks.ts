@@ -1,10 +1,12 @@
 'use server'
 import { getSession } from '@/lib/session';
-
+import { createLogger } from '@/lib/logger'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+
+const logger = createLogger('Tasks')
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -66,7 +68,6 @@ export async function getTasks(filters?: {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Build query
         let query = supabase
@@ -95,13 +96,13 @@ export async function getTasks(filters?: {
         const { data, error } = await query
 
         if (error) {
-            console.error('Error fetching tasks:', error)
+            logger.error('Failed to fetch tasks', error)
             return { error: 'Failed to fetch tasks' }
         }
 
         return { data: data as Task[] }
     } catch (error) {
-        console.error('Unexpected error in getTasks:', error)
+        logger.error('Unexpected error in getTasks', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -117,7 +118,6 @@ export async function getAtRiskTasks() {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
@@ -136,13 +136,13 @@ export async function getAtRiskTasks() {
             .limit(10)
 
         if (error) {
-            console.error('Error fetching at-risk tasks:', error)
+            logger.error('Failed to fetch at-risk tasks', error)
             return { error: 'Failed to fetch at-risk tasks' }
         }
 
         return { data: data as Task[] }
     } catch (error) {
-        console.error('Unexpected error in getAtRiskTasks:', error)
+        logger.error('Unexpected error in getAtRiskTasks', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -158,7 +158,6 @@ export async function createTask(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Parse and validate
         const rawData = {
@@ -207,7 +206,7 @@ export async function createTask(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error creating task:', error)
+            logger.error('Failed to create task', error)
             return { error: 'Failed to create task' }
         }
 
@@ -216,7 +215,7 @@ export async function createTask(formData: FormData) {
 
         return { data: data as Task, success: true }
     } catch (error) {
-        console.error('Unexpected error in createTask:', error)
+        logger.error('Unexpected error in createTask', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -232,7 +231,6 @@ export async function updateTask(formData: FormData) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const rawData = {
             id: formData.get('id') as string,
@@ -252,7 +250,7 @@ export async function updateTask(formData: FormData) {
         const { id, ...updateData } = validation.data
 
         // Build update object
-        const updates: any = {}
+        const updates: Record<string, string | null> = {}
         if (updateData.title) updates.title = updateData.title
         if (updateData.description !== undefined) updates.description = updateData.description
         if (updateData.priority) updates.priority = updateData.priority
@@ -276,19 +274,20 @@ export async function updateTask(formData: FormData) {
             .single()
 
         if (error) {
-            console.error('Error updating task:', error)
+            logger.error('Failed to update task', error)
             return { error: 'Failed to update task' }
         }
 
         // Verify ownership
-        if ((data as any).events.planner_id !== session?.userId) {
+        const taskWithEvent = data as Task & { events: { planner_id: string } }
+        if (taskWithEvent.events.planner_id !== session.userId) {
             return { error: 'Unauthorized' }
         }
 
         revalidatePath('/planner/tasks')
         return { data: data as Task, success: true }
     } catch (error) {
-        console.error('Unexpected error in updateTask:', error)
+        logger.error('Unexpected error in updateTask', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -304,7 +303,6 @@ export async function deleteTask(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         // Verify ownership before delete
         const { data: task, error: fetchError } = await supabase
@@ -317,7 +315,9 @@ export async function deleteTask(id: string) {
             return { error: 'Task not found' }
         }
 
-        if ((task as any).events.planner_id !== session?.userId) {
+        const taskWithEvent = task as unknown as { event_id: string; events: { planner_id: string } | { planner_id: string }[] }
+        const eventData = Array.isArray(taskWithEvent.events) ? taskWithEvent.events[0] : taskWithEvent.events
+        if (eventData.planner_id !== session.userId) {
             return { error: 'Unauthorized' }
         }
 
@@ -327,14 +327,14 @@ export async function deleteTask(id: string) {
             .eq('id', id)
 
         if (error) {
-            console.error('Error deleting task:', error)
+            logger.error('Failed to delete task', error)
             return { error: 'Failed to delete task' }
         }
 
         revalidatePath('/planner/tasks')
         return { success: true }
     } catch (error) {
-        console.error('Unexpected error in deleteTask:', error)
+        logger.error('Unexpected error in deleteTask', error)
         return { error: 'An unexpected error occurred' }
     }
 }
@@ -350,7 +350,6 @@ export async function completeTask(id: string) {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
         const { data, error } = await supabase
             .from('tasks')
@@ -363,14 +362,14 @@ export async function completeTask(id: string) {
             .single()
 
         if (error) {
-            console.error('Error completing task:', error)
+            logger.error('Failed to complete task', error)
             return { error: 'Failed to complete task' }
         }
 
         revalidatePath('/planner/tasks')
         return { data: data as Task, success: true }
     } catch (error) {
-        console.error('Unexpected error in completeTask:', error)
+        logger.error('Unexpected error in completeTask', error)
         return { error: 'An unexpected error occurred' }
     }
 }

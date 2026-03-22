@@ -82,9 +82,9 @@ export default function FoodPage() {
 
             // Map available caterers from already-fetched data
             const assignedIds = new Set(assignedCaterers.map(c => c.id))
-            const available = (allCaterers || []).map((vendor: any) => ({
+            const available = (allCaterers || []).map((vendor: { id: string; company_name?: string; name?: string; rating?: number; review_count?: number; start_price?: number; image_url?: string }) => ({
                 id: vendor.id,
-                name: vendor.company_name || vendor.name,
+                name: vendor.company_name || vendor.name || 'Unknown Vendor',
                 rating: vendor.rating || 0,
                 reviewCount: vendor.review_count || 0,
                 basePrice: vendor.start_price || 0,
@@ -153,7 +153,7 @@ export default function FoodPage() {
     }
 
     // Extract food preferences from requirements if available
-    const requirements = (event as any).requirements || {}
+    const requirements = (event as Event & { requirements?: { food?: { dietary?: string[]; cuisines?: string[]; servingStyle?: string } } }).requirements || {}
     const foodPrefs = requirements.food || {}
 
     const selectedCaterer = selectedCaterers[0] // For now, show first selected

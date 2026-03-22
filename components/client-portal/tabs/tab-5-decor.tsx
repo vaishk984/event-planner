@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { CategoryShowroom } from '@/components/client-portal/category-showroom'
 import { InspirationGallery } from '@/components/client-portal/inspiration-gallery'
 import { Card } from '@/components/ui/card'
@@ -101,7 +101,7 @@ export function Tab5Decor() {
                         {STYLES.map((style) => (
                             <button
                                 key={style.id}
-                                onClick={() => updateDecor({ style: style.id as any })}
+                                onClick={() => updateDecor({ style: style.id as ClientIntakeData['decor']['style'] })}
                                 className={`p-3 rounded-xl border-2 text-center transition-all ${data.decor.style === style.id
                                     ? 'border-purple-500 bg-purple-50 shadow-md scale-105'
                                     : 'border-gray-200 hover:border-purple-300'
@@ -121,7 +121,7 @@ export function Tab5Decor() {
                         {COLOR_MOODS.map((mood) => (
                             <button
                                 key={mood.id}
-                                onClick={() => updateDecor({ colorMood: mood.id as any })}
+                                onClick={() => updateDecor({ colorMood: mood.id as ClientIntakeData['decor']['colorMood'] })}
                                 className={`p-3 rounded-xl border-2 text-center transition-all ${data.decor.colorMood === mood.id
                                     ? 'border-pink-500 bg-pink-50 shadow-md'
                                     : 'border-gray-200 hover:border-pink-300'
@@ -146,7 +146,7 @@ export function Tab5Decor() {
                             {INTENSITIES.map((level) => (
                                 <button
                                     key={level.id}
-                                    onClick={() => updateDecor({ intensity: level.id as any })}
+                                    onClick={() => updateDecor({ intensity: level.id as ClientIntakeData['decor']['intensity'] })}
                                     className={`p-2 rounded-lg border-2 text-center transition-all ${data.decor.intensity === level.id
                                         ? 'border-purple-500 bg-purple-50'
                                         : 'border-gray-200 hover:border-purple-300'
@@ -165,7 +165,7 @@ export function Tab5Decor() {
                             {LIGHTING.map((light) => (
                                 <button
                                     key={light.id}
-                                    onClick={() => updateDecor({ lighting: light.id as any })}
+                                    onClick={() => updateDecor({ lighting: light.id as ClientIntakeData['decor']['lighting'] })}
                                     className={`p-2 rounded-lg border-2 text-center transition-all ${data.decor.lighting === light.id
                                         ? 'border-amber-500 bg-amber-50'
                                         : 'border-gray-200 hover:border-amber-300'

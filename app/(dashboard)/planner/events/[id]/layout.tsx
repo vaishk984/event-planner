@@ -19,7 +19,7 @@ export default function EventLayout({
     const id = params.id as string
 
     const [event, setEvent] = useState<Event | null>(null)
-    const [vendors, setVendors] = useState<any[]>([])
+    const [vendors, setVendors] = useState<{ id: string; name: string; category: string; service: string; cost: number; imageUrl: string }[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {

@@ -16,20 +16,9 @@ import {
     acceptBookingRequest,
     declineBookingRequest
 } from '@/lib/actions/vendor-actions'
+import type { BookingRequest as BaseBookingRequest } from '@/lib/repositories/supabase-booking-repository'
 
-interface BookingRequest {
-    id: string
-    eventName: string
-    eventDate: string
-    city: string
-    venue: string
-    guestCount: number
-    service: string
-    budget: number
-    status: 'pending' | 'accepted' | 'declined' | 'completed' | 'draft' | 'quote_requested'
-    createdAt: string
-    clientName?: string
-    plannerName?: string
+interface BookingRequest extends BaseBookingRequest {
     notes?: string
 }
 
@@ -50,7 +39,7 @@ export default function VendorBookingsPage() {
         setLoading(true)
         try {
             const requests = await getVendorBookingRequests()
-            setBookings(requests as any || [])
+            setBookings(requests || [])
         } catch (error) {
             console.error('Failed to load bookings:', error)
             toast.error('Failed to load bookings')
@@ -101,7 +90,7 @@ export default function VendorBookingsPage() {
 
     const counts = {
         all: bookings.length,
-        pending: bookings.filter(b => b.status === 'pending' || b.status === 'draft' || b.status === 'quote_requested').length,
+        pending: bookings.filter(b => { const s = b.status as string; return s === 'pending' || s === 'draft' || s === 'quote_requested' }).length,
         accepted: bookings.filter(b => b.status === 'accepted').length,
         declined: bookings.filter(b => b.status === 'declined').length,
     }
@@ -247,7 +236,7 @@ export default function VendorBookingsPage() {
 
                                     {/* Actions */}
                                     <div className="flex flex-col gap-2 ml-4">
-                                        {(booking.status === 'pending' || booking.status === 'draft' || booking.status === 'quote_requested') && (
+                                        {((booking.status as string) === 'pending' || (booking.status as string) === 'draft' || (booking.status as string) === 'quote_requested') && (
                                             <>
                                                 <Button
                                                     size="sm"

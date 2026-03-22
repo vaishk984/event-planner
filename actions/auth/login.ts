@@ -4,6 +4,9 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthenticatedUser } from '@/lib/session'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Auth')
 
 export interface LoginState {
     error: string | null
@@ -28,7 +31,7 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
     })
 
     if (error) {
-        console.error('Login error:', error.message)
+        logger.error('Login failed', error)
         return { error: error.message }
     }
 
@@ -73,11 +76,7 @@ export async function signup(formData: FormData) {
     const companyName = formData.get('company_name') as string
     const categoryId = formData.get('category_id') as string
 
-    console.log('=== SIGNUP DEBUG ===')
-    console.log('Role from form:', role)
-    console.log('Email:', email)
-    console.log('Name:', name)
-    console.log('Category:', categoryId)
+    logger.info('Signup initiated', { role, email, name, categoryId })
 
     if (!email || !password || !name) {
         return { error: 'All fields are required' }
@@ -103,8 +102,7 @@ export async function signup(formData: FormData) {
     })
 
     if (error) {
-        console.error('Auth signup error:', error)
-        console.error('Error details:', JSON.stringify(error, null, 2))
+        logger.error('Auth signup failed', error)
         return { error: error.message }
     }
 
@@ -114,11 +112,7 @@ export async function signup(formData: FormData) {
 
     // Create vendor record directly (don't rely on trigger)
     if (role === 'vendor') {
-        console.log('Creating vendor record for user:', data.user.id)
-        console.log('Vendor data:', {
-            user_id: data.user.id,
-            company_name: name,
-        })
+        logger.info('Creating vendor record', { userId: data.user.id, companyName: name })
 
         const { error: vendorError, data: vendorData } = await supabase.from('vendors').insert({
             user_id: data.user.id,
@@ -126,17 +120,13 @@ export async function signup(formData: FormData) {
         }).select()
 
         if (vendorError) {
-            console.error('❌ Vendor creation error:', vendorError)
-            console.error('Error code:', vendorError.code)
-            console.error('Error details:', vendorError.details)
-            console.error('Error hint:', vendorError.hint)
-            console.error('Error message:', vendorError.message)
+            logger.error('Vendor creation failed', vendorError, { code: vendorError.code, details: vendorError.details, hint: vendorError.hint })
         } else {
-            console.log('✅ Vendor record created:', vendorData)
+            logger.info('Vendor record created', { vendorData })
         }
     }
 
-    console.log('Redirecting to:', `/${role}`)
+    logger.info('Signup complete, redirecting', { role })
     // Redirect to dashboard
     redirect(`/${role}`)
 }

@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Signup')
 
 export async function signup(formData: FormData) {
     const email = formData.get('email') as string
@@ -12,9 +15,7 @@ export async function signup(formData: FormData) {
     const companyName = formData.get('company_name') as string
     const categoryId = formData.get('category_id') as string
 
-    console.log('=== SIGNUP (signup.ts) ===')
-    console.log('Role:', role)
-    console.log('Category:', categoryId)
+    logger.info('Signup initiated', { role, categoryId })
 
     if (!email || !password || !name) {
         return { error: 'All fields are required' }
@@ -40,7 +41,7 @@ export async function signup(formData: FormData) {
     })
 
     if (error) {
-        console.error('Signup error:', error.message)
+        logger.error('Signup failed', error)
         return { error: error.message }
     }
 
@@ -50,7 +51,7 @@ export async function signup(formData: FormData) {
 
     // Create vendor record directly
     if (role === 'vendor') {
-        console.log('Creating vendor record...')
+        logger.info('Creating vendor record')
         const { error: vendorError } = await supabase.from('vendors').insert({
             user_id: data.user?.id,
             name: name,
@@ -61,14 +62,14 @@ export async function signup(formData: FormData) {
         })
 
         if (vendorError) {
-            console.error('Vendor creation error:', vendorError)
+            logger.error('Vendor creation failed', vendorError)
         } else {
-            console.log('Vendor created successfully')
+            logger.info('Vendor created successfully')
         }
     }
 
     revalidatePath('/', 'layout')
-    console.log('Redirecting to:', `/${role}`)
+    logger.info('Signup complete, redirecting', { role })
 
     // Redirect based on role
     redirect(`/${role}`)

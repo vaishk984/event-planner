@@ -54,7 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('id', userId)
             .single()
 
-        setRole((data?.role as any)?.name ?? null)
+        // Supabase join `role:roles(name)` returns { name: string }[] | null
+        const roleData = data?.role as unknown as { name: string }[] | null
+        const roleName = roleData?.[0]?.name ?? null
+        setRole(roleName as UserRole | null)
         setLoading(false)
     }
 

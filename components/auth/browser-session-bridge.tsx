@@ -23,7 +23,12 @@ export function BrowserSessionBridge() {
                 return
             }
 
-            const result = await response.json()
+            let result: { accessToken?: string; refreshToken?: string }
+            try {
+                result = await response.json()
+            } catch {
+                return // Non-JSON response
+            }
 
             if (cancelled || !result.accessToken || !result.refreshToken) {
                 return

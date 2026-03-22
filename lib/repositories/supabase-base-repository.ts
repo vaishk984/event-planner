@@ -23,15 +23,15 @@ export abstract class SupabaseBaseRepository<T extends { id: string }> {
     /**
      * Transform DB row to TypeScript type (snake_case -> camelCase)
      */
-    protected fromDb(row: any): T {
-        if (!row) return row
+    protected fromDb(row: Record<string, unknown>): T {
+        if (!row) return row as unknown as T
         return toCamelCaseKeys(row) as T
     }
 
     /**
      * Transform DB rows to TypeScript types
      */
-    protected fromDbArray(rows: any[]): T[] {
+    protected fromDbArray(rows: Record<string, unknown>[]): T[] {
         if (!rows) return []
         return rows.map(row => this.fromDb(row))
     }
@@ -39,9 +39,9 @@ export abstract class SupabaseBaseRepository<T extends { id: string }> {
     /**
      * Transform TypeScript object to DB format (camelCase -> snake_case)
      */
-    protected toDb(data: any): any {
-        if (!data) return data
-        return toSnakeCaseKeys(data)
+    protected toDb(data: Partial<T> | Record<string, unknown>): Record<string, unknown> {
+        if (!data) return data as Record<string, unknown>
+        return toSnakeCaseKeys(data as Record<string, unknown>)
     }
 
     /**
@@ -92,7 +92,7 @@ export abstract class SupabaseBaseRepository<T extends { id: string }> {
      */
     async create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<ActionResult<T>> {
         const supabase = await this.getClient()
-        const dbData = this.toDb(data)
+        const dbData = this.toDb(data as Record<string, unknown>)
 
         const { data: created, error } = await supabase
             .from(this.tableName)
@@ -119,8 +119,8 @@ export abstract class SupabaseBaseRepository<T extends { id: string }> {
         const supabase = await this.getClient()
 
         // Remove id from update data and convert to snake_case
-        const { id: _, createdAt, updatedAt, ...updateFields } = data as any
-        const dbData = this.toDb(updateFields)
+        const { id: _, createdAt, updatedAt, ...updateFields } = data as Record<string, unknown>
+        const dbData = this.toDb(updateFields as Record<string, unknown>)
 
         const { data: updated, error } = await supabase
             .from(this.tableName)

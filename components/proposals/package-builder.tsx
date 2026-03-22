@@ -83,7 +83,7 @@ export function PackageBuilder({ eventId, onSuccess }: PackageBuilderProps) {
 
                 const proposalItems = tierItems.map(item => ({
                     vendorId: 'mock_vendor', // In real app, this comes from item
-                    category: item.category as any,
+                    category: item.category.toLowerCase() as import('@/types/domain').VendorCategory,
                     name: item.name,
                     description: item.description,
                     quantity: item.category === 'Catering' ? guestCount : 1,

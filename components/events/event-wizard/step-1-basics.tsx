@@ -45,7 +45,7 @@ export function Step1Basics({ data, updateData }: Step1Props) {
                     {EVENT_TYPES.map((type) => (
                         <button
                             key={type.id}
-                            onClick={() => updateData({ eventType: type.id as any })}
+                            onClick={() => updateData({ eventType: type.id as EventPlan['basics']['eventType'] })}
                             className={`p-4 rounded-xl border-2 transition-all text-center ${data.eventType === type.id
                                 ? 'border-indigo-500 bg-indigo-50 shadow-md'
                                 : 'border-gray-200 hover:border-indigo-300'

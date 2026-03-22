@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/anubhav.kumar/anubhav.pro/event-planner/app/api -name \"route.ts\" ! -exec grep -q \"src/backend\" {})",
+      "Bash(-print)",
+      "Bash(grep -r \"from.*lib/repositories\\\\|from.*lib/services\" /c/Users/anubhav.kumar/anubhav.pro/event-planner --include=*.ts --include=*.tsx)",
+      "Bash(grep -r from.*src/backend /c/Users/anubhav.kumar/anubhav.pro/event-planner --include=*.ts --include=*.tsx)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm run:*)",
+      "Bash(xargs kill:*)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"anubhav.kus12@gmail.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"anubhav1234\"\"\"\"}')",
+      "Bash(curl -v -X POST http://localhost:3000/api/auth/login -d \"email=anubhav.kus12@gmail.com&password=anubhav1234\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://lhweubswsepknmpzliio.supabase.co/rest/v1/ -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxod2V1YnN3c2Vwa25tcHpsaWlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTgyODksImV4cCI6MjA4MTg3NDI4OX0.6QzLGq5CBNpZZXUFPlgUQc_spFhaiZ9iMwk6kZRKrdI\")",
+      "Bash(node -e \"fetch\\(''https://lhweubswsepknmpzliio.supabase.co/rest/v1/'', {headers: {''apikey'': ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxod2V1YnN3c2Vwa25tcHpsaWlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTgyODksImV4cCI6MjA4MTg3NDI4OX0.6QzLGq5CBNpZZXUFPlgUQc_spFhaiZ9iMwk6kZRKrdI''}}\\).then\\(r => console.log\\(''Status:'', r.status\\)\\).catch\\(e => console.log\\(''Error:'', e.message\\)\\)\")",
+      "Bash(node -e \"fetch\\(''https://lhweubswsepknmpzliio.supabase.co/rest/v1/'', {headers: {''apikey'': ''test''}}\\).then\\(r => console.log\\(''OK:'', r.status\\)\\).catch\\(e => console.log\\(''Error:'', e.cause || e.message\\)\\)\")",
+      "Bash(node -e \"require\\(''dotenv''\\).config\\({path:''.env.local''}\\); console.log\\(''URL:'', process.env.NEXT_PUBLIC_SUPABASE_URL ? ''SET'' : ''MISSING''\\); console.log\\(''KEY:'', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? ''SET'' : ''MISSING''\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''next/package.json''\\).version\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(curl -sk -o /dev/null -w \"%{http_code}\" http://localhost:3000/login)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(findstr LISTENING)",
+      "Bash(ls -la /c/Users/anubhav.kumar/anubhav.pro/event-planner/app/\\\\\\(dashboard\\\\\\)/planner/events/[id]/)",
+      "Bash(ls \"C:/Users/anubhav.kumar/anubhav.pro/event-planner/app/\\(dashboard\\)/planner/events/[id]/\")"
+    ]
+  }
+}

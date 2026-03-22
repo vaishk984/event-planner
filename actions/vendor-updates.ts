@@ -27,7 +27,6 @@ export async function submitVendorUpdate(data: {
         if (!session) {
             return { error: 'Unauthorized' }
         }
-        const user = { id: session.userId, email: session.email } as any;
 
     // Get vendor ID for this user
     const { data: vendor } = await supabase
@@ -231,16 +230,33 @@ export async function getEventDayVendors(eventId: string) {
     }
 
     // Merge and deduplicate by vendor_id
-    const vendorMap = new Map<string, any>()
+    interface EventDayVendor {
+        id: string
+        vendorId: string
+        vendorName: string
+        vendorCategory: string
+        vendorImage: string | null
+        arrivalStatus: string
+        arrivedAt: string | null
+        departedAt: string | null
+        agreedAmount: number
+        status: string
+        source: 'assignment' | 'booking'
+    }
+
+    type JoinedVendor = { company_name?: string; category?: string; image_url?: string }
+
+    const vendorMap = new Map<string, EventDayVendor>()
 
     for (const a of (assignments || [])) {
         const arrival = arrivalMap.get(a.vendor_id)
+        const vendor = (a as Record<string, unknown>).vendor as JoinedVendor | null
         vendorMap.set(a.vendor_id, {
             id: a.id,
             vendorId: a.vendor_id,
-            vendorName: (a as any).vendor?.company_name || a.vendor_name || 'Unknown',
-            vendorCategory: (a as any).vendor?.category || a.vendor_category || 'other',
-            vendorImage: (a as any).vendor?.image_url || null,
+            vendorName: vendor?.company_name || a.vendor_name || 'Unknown',
+            vendorCategory: vendor?.category || a.vendor_category || 'other',
+            vendorImage: vendor?.image_url || null,
             arrivalStatus: arrival?.status || a.arrival_status || 'pending',
             arrivedAt: arrival?.at || null,
             departedAt: arrival?.status === 'departed' ? arrival.at : null,
@@ -253,12 +269,13 @@ export async function getEventDayVendors(eventId: string) {
     for (const b of (bookings || [])) {
         if (!vendorMap.has(b.vendor_id)) {
             const arrival = arrivalMap.get(b.vendor_id)
+            const vendor = (b as Record<string, unknown>).vendor as JoinedVendor | null
             vendorMap.set(b.vendor_id, {
                 id: b.id,
                 vendorId: b.vendor_id,
-                vendorName: (b as any).vendor?.company_name || 'Unknown',
-                vendorCategory: (b as any).vendor?.category || b.service || 'other',
-                vendorImage: (b as any).vendor?.image_url || null,
+                vendorName: vendor?.company_name || 'Unknown',
+                vendorCategory: vendor?.category || b.service || 'other',
+                vendorImage: vendor?.image_url || null,
                 arrivalStatus: arrival?.status || 'pending',
                 arrivedAt: arrival?.at || null,
                 departedAt: arrival?.status === 'departed' ? arrival.at : null,

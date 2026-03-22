@@ -21,33 +21,33 @@ export function toCamelCase(str: string): string {
 /**
  * Convert object keys from camelCase to snake_case (for sending to DB)
  */
-export function toSnakeCaseKeys<T extends Record<string, any>>(obj: T): Record<string, any> {
+export function toSnakeCaseKeys<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
     if (!obj || typeof obj !== 'object') return obj
-    if (Array.isArray(obj)) return obj.map(item => toSnakeCaseKeys(item)) as any
+    if (Array.isArray(obj)) return obj.map(item => toSnakeCaseKeys(item)) as unknown as Record<string, unknown>
 
     return Object.entries(obj).reduce((acc, [key, value]) => {
         const snakeKey = toSnakeCase(key)
         acc[snakeKey] = value && typeof value === 'object' && !Array.isArray(value)
-            ? toSnakeCaseKeys(value)
+            ? toSnakeCaseKeys(value as Record<string, unknown>)
             : value
         return acc
-    }, {} as Record<string, any>)
+    }, {} as Record<string, unknown>)
 }
 
 /**
  * Convert object keys from snake_case to camelCase (for receiving from DB)
  */
-export function toCamelCaseKeys<T extends Record<string, any>>(obj: T): Record<string, any> {
+export function toCamelCaseKeys<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
     if (!obj || typeof obj !== 'object') return obj
-    if (Array.isArray(obj)) return obj.map(item => toCamelCaseKeys(item)) as any
+    if (Array.isArray(obj)) return obj.map(item => toCamelCaseKeys(item)) as unknown as Record<string, unknown>
 
     return Object.entries(obj).reduce((acc, [key, value]) => {
         const camelKey = toCamelCase(key)
         acc[camelKey] = value && typeof value === 'object' && !Array.isArray(value)
-            ? toCamelCaseKeys(value)
+            ? toCamelCaseKeys(value as Record<string, unknown>)
             : value
         return acc
-    }, {} as Record<string, any>)
+    }, {} as Record<string, unknown>)
 }
 
 /**

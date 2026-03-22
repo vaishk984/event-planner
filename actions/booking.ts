@@ -1,7 +1,10 @@
 'use server'
 import { getSession } from '@/lib/session';
+import { createLogger } from '@/lib/logger'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+
+const logger = createLogger('Booking')
 
 export async function createBookingRequest(data: {
     eventId: string
@@ -20,16 +23,15 @@ export async function createBookingRequest(data: {
 
     // Get current user (planner)
     const session = await getSession();
-        if (!session) {
-            return { error: 'Unauthorized' }
-        }
-        const user = { id: session.userId, email: session.email } as any;
+    if (!session) {
+        return { error: 'Unauthorized' }
+    }
 
     // Ensure user profile exists
     const { data: profile } = await supabase
         .from('user_profiles')
         .select('id')
-        .eq('id', session?.userId)
+        .eq('id', session.userId)
         .single()
 
     if (!profile) {
@@ -37,12 +39,12 @@ export async function createBookingRequest(data: {
         const { error: profileError } = await supabase
             .from('user_profiles')
             .insert({
-                id: session?.userId,
-                company_name: (user as any).user_metadata?.company_name || 'My Company'
+                id: session.userId,
+                company_name: 'My Company'
             })
 
         if (profileError) {
-            console.error('Error auto-creating profile:', profileError)
+            logger.error('Failed to auto-create profile', profileError)
             return { error: 'Failed to create user profile' }
         }
 
@@ -50,13 +52,12 @@ export async function createBookingRequest(data: {
         const { error: plannerError } = await supabase
             .from('planner_profiles')
             .upsert({
-                id: session?.userId,
-                company_name: (user as any).user_metadata?.company_name || 'My Company'
+                id: session.userId,
+                company_name: 'My Company'
             })
 
         if (plannerError) {
-            // Ignore error as table might not exist or duplicate
-            console.log('Optional planner_profiles insert failed (safe to ignore if using old schema)')
+            logger.info('Optional planner_profiles insert skipped', { reason: 'table may not exist or duplicate' })
         }
     }
 
@@ -70,7 +71,7 @@ export async function createBookingRequest(data: {
 
     if (existing) {
         // Already exists, skip insert
-        console.log('Booking request already exists for this event+vendor')
+        logger.info('Booking request already exists', { eventId: data.eventId, vendorId: data.vendorId })
         return { success: true, alreadyExists: true }
     }
 
@@ -92,7 +93,7 @@ export async function createBookingRequest(data: {
         })
 
     if (error) {
-        console.error('Error creating booking request:', error)
+        logger.error('Failed to create booking request', error)
         return { error: 'Failed to create booking request' }
     }
 
@@ -119,12 +120,12 @@ export async function getRequestsForEvent(eventId: string) {
         .eq('event_id', eventId)
 
     if (error) {
-        console.error('Error fetching booking requests:', error)
+        logger.error('Failed to fetch booking requests', error)
         return []
     }
 
     // Map snake_case to camelCase
-    return data.map((req: any) => ({
+    return data.map((req: Record<string, unknown> & { vendor?: Record<string, unknown> }) => ({
         id: req.id,
         eventId: req.event_id,
         vendorId: req.vendor_id,
@@ -167,7 +168,7 @@ export async function searchVendors(category?: string, query?: string) {
         })
         return results
     } catch (error) {
-        console.error('Error searching vendors:', error)
+        logger.error('Failed to search vendors', error)
         return []
     }
 }
@@ -175,22 +176,20 @@ export async function searchVendors(category?: string, query?: string) {
 export async function deleteBookingRequest(eventId: string, vendorId: string) {
     const supabase = await createClient()
 
-    // Get current user (planner)
     const session = await getSession();
-        if (!session) {
-            return { error: 'Unauthorized' }
-        }
-        const user = { id: session.userId, email: session.email } as any;
+    if (!session) {
+        return { error: 'Unauthorized' }
+    }
 
     const { error } = await supabase
         .from('booking_requests')
         .delete()
         .eq('event_id', eventId)
         .eq('vendor_id', vendorId)
-        .eq('planner_id', session?.userId) // Security check
+        .eq('planner_id', session.userId) // Security check
 
     if (error) {
-        console.error('Error deleting booking request:', error)
+        logger.error('Failed to delete booking request', error)
         return { error: 'Failed to delete booking request' }
     }
 

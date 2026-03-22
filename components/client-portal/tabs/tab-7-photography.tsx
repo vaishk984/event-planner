@@ -1,6 +1,6 @@
 'use client'
 
-import { useClientIntake } from '@/components/providers/client-intake-provider'
+import { useClientIntake, type ClientIntakeData } from '@/components/providers/client-intake-provider'
 import { CategoryShowroom } from '@/components/client-portal/category-showroom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -62,7 +62,7 @@ export function Tab7Photography() {
                         {PACKAGES.map((pkg) => (
                             <button
                                 key={pkg.id}
-                                onClick={() => updatePhotography({ package: pkg.id as any })}
+                                onClick={() => updatePhotography({ package: pkg.id as ClientIntakeData['photography']['package'] })}
                                 className={`p-4 rounded-xl border-2 text-center transition-all ${data.photography.package === pkg.id
                                     ? 'border-blue-500 bg-blue-50 shadow-md scale-105'
                                     : 'border-gray-200 hover:border-blue-300'
@@ -83,7 +83,7 @@ export function Tab7Photography() {
                         {STYLES.map((style) => (
                             <button
                                 key={style.id}
-                                onClick={() => updatePhotography({ style: style.id as any })}
+                                onClick={() => updatePhotography({ style: style.id as ClientIntakeData['photography']['style'] })}
                                 className={`p-3 rounded-lg border-2 text-center transition-all ${data.photography.style === style.id
                                     ? 'border-cyan-500 bg-cyan-50'
                                     : 'border-gray-200 hover:border-cyan-300'
@@ -139,7 +139,7 @@ export function Tab7Photography() {
                             {ALBUM_TYPES.map((album) => (
                                 <button
                                     key={album.id}
-                                    onClick={() => updatePhotography({ album: album.id as any })}
+                                    onClick={() => updatePhotography({ album: album.id as ClientIntakeData['photography']['album'] })}
                                     className={`w-full p-3 rounded-lg border-2 text-left transition-all ${data.photography.album === album.id
                                         ? 'border-purple-500 bg-purple-50'
                                         : 'border-gray-200 hover:border-purple-300'

@@ -1,7 +1,7 @@
 export const siteConfig = {
     name: 'PlannerOS',
     description: 'Professional Event Planning Platform for Agencies',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    url: process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
     ogImage: '/og-image.png',
     links: {
         twitter: 'https://twitter.com/planneros',

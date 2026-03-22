@@ -81,7 +81,7 @@ export function Step5ServicesPrefs({ data, updateData }: Step5Props) {
                         {ENTERTAINMENT_PREFS.map((pref) => (
                             <button
                                 key={pref.id}
-                                onClick={() => updateData({ entertainmentType: pref.id as any })}
+                                onClick={() => updateData({ entertainmentType: pref.id as EventPlan['entertainment']['entertainmentType'] })}
                                 className={`p-2 rounded-lg border-2 text-center transition-all ${data.entertainmentType === pref.id
                                     ? 'border-purple-500 bg-purple-50'
                                     : 'border-gray-200 hover:border-purple-300'
@@ -103,7 +103,7 @@ export function Step5ServicesPrefs({ data, updateData }: Step5Props) {
                         {PHOTOGRAPHY_NEEDS.map((level) => (
                             <button
                                 key={level.id}
-                                onClick={() => updateData({ photographyPackage: level.id as any })}
+                                onClick={() => updateData({ photographyPackage: level.id as EventPlan['entertainment']['photographyPackage'] })}
                                 className={`p-2 rounded-lg border-2 text-center transition-all ${data.photographyPackage === level.id
                                     ? 'border-blue-500 bg-blue-50'
                                     : 'border-gray-200 hover:border-blue-300'

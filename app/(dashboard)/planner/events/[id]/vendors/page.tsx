@@ -3,10 +3,32 @@ import { getVendors } from '@/actions/vendors'
 import { AssignVendorDialog } from './assign-vendor-dialog'
 import { BookingsList } from './bookings-list'
 import { Store } from 'lucide-react'
+import type { VendorData } from '@/src/backend/entities/Vendor'
 
-// Define the VendorData interface locally or import it if exported from vendors.ts or Entity
-// We used Entity return type in actions, which is VendorData.
-// We need to type cast or ensure compatibility.
+interface BookingsResult {
+    data?: Array<{
+        id: string
+        event_id: string
+        status: string
+        service: string
+        quoted_amount: number | null
+        agreed_amount: number | null
+        vendors: {
+            company_name: string
+            category: string
+            contact_name: string | null
+            email: string | null
+            phone: string | null
+            location: string | null
+        }
+    }>
+    error?: string
+}
+
+interface VendorsResult {
+    data?: VendorData[]
+    error?: string
+}
 
 export default async function EventVendorsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: eventId } = await params
@@ -16,12 +38,9 @@ export default async function EventVendorsPage({ params }: { params: Promise<{ i
         getVendors()
     ])
 
-    const bookings = (bookingsResult as any).data || []
+    const bookings = (bookingsResult as BookingsResult).data || []
 
-    // Filter available vendors: 
-    // Ideally exclude those already booked? 
-    // Or just pass all. Let's pass all for now, maybe mark them as assigned in dialog visually if needed.
-    const allVendors = (vendorsResult as any).data || []
+    const allVendors = (vendorsResult as VendorsResult).data || []
 
     return (
         <div className="space-y-6">
@@ -38,7 +57,7 @@ export default async function EventVendorsPage({ params }: { params: Promise<{ i
                 </div>
             </div>
 
-            <BookingsList bookings={bookings as any[]} eventId={eventId} />
+            <BookingsList bookings={bookings} eventId={eventId} />
         </div>
     )
 }
